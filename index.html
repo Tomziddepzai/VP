@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Golden Hoàng Kim - Living Entity</title>
+    <title>Golden Memory Planet - Cinematic PRO</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; cursor: none; }
         canvas { display: block; }
@@ -32,147 +32,153 @@
 
         const videoElement = document.getElementById('input_video');
 
-        // --- 1. KHỞI TẠO ---
+        // --- 1. THIẾT LẬP VŨ TRỤ ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 15); 
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 18; // Khoảng cách mặc định gần vành đai
 
-        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
+        // Hiệu ứng ánh vàng lộng lẫy (Bloom)
         const composer = new EffectComposer(renderer);
         composer.addPass(new RenderPass(scene, camera));
-        // Bloom vàng trắng cực mạnh
-        const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 3.5, 0.4, 0.1);
+        const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.2, 0.4, 0.1);
         composer.addPass(bloom);
 
+        // Tạo Texture hạt sáng mịn
         const texture = (() => {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            g.addColorStop(0, 'rgba(255, 255, 255, 1)'); 
-            g.addColorStop(0.15, 'rgba(255, 250, 220, 1)');
-            g.addColorStop(0.4, 'rgba(218, 165, 32, 0.4)');
+            g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            g.addColorStop(0.2, 'rgba(255, 200, 50, 0.8)');
+            g.addColorStop(0.5, 'rgba(150, 100, 0, 0.2)');
             g.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
             return new THREE.CanvasTexture(canvas);
         })();
 
-        // --- 2. HỆ THỐNG HẠT ---
-        const pCount = 32000;
+        // --- 2. HỆ THỐNG HẠT VÀNG ---
+        const pCount = 30000;
         const geo = new THREE.BufferGeometry();
         const positions = new Float32Array(pCount * 3);
-        const basePos = new Float32Array(pCount * 3);
-        const idlePos = new Float32Array(pCount * 3);
-        const randoms = new Float32Array(pCount);
+        const basePos = new Float32Array(pCount * 3); // Tọa độ khi thành hình
+        const idlePos = new Float32Array(pCount * 3); // Tọa độ khi nhảy múa
+        const randoms = new Float32Array(pCount);     // Tốc độ riêng từng hạt
 
         for (let i = 0; i < pCount; i++) {
+            // TẠO HÌNH HÀNH TINH (Khi có tay)
             let x, y, z;
-            if (i < 16000) {
-                const phi = Math.acos(-1 + (2 * i) / 16000);
-                const theta = Math.sqrt(16000 * Math.PI) * phi;
+            if (i < 15000) { // Lõi cầu
+                const phi = Math.acos(-1 + (2 * i) / 15000);
+                const theta = Math.sqrt(15000 * Math.PI) * phi;
                 x = 5 * Math.sin(phi) * Math.cos(theta);
                 y = 5 * Math.sin(phi) * Math.sin(theta);
                 z = 5 * Math.cos(phi);
-            } else {
+            } else { // Vành đai phẳng
                 const angle = Math.random() * Math.PI * 2;
-                const r = 7.8 + Math.random() * 4.2;
+                const r = 7.5 + Math.random() * 3.5;
                 x = Math.cos(angle) * r;
-                y = (Math.random() - 0.5) * 0.2;
+                y = (Math.random() - 0.5) * 0.15; // Rất mỏng và phẳng
                 z = Math.sin(angle) * r;
             }
             basePos[i*3] = x; basePos[i*3+1] = y; basePos[i*3+2] = z;
 
-            idlePos[i*3] = (Math.random() - 0.5) * 35;
-            idlePos[i*3+1] = (Math.random() - 0.5) * 25;
-            idlePos[i*3+2] = (Math.random() - 0.5) * 15 + 8; // Gần cam hơn
+            // TẠO TRẠNG THÁI NHẢY MÚA LUNG TUNG (Khi chưa có tay)
+            idlePos[i*3] = (Math.random() - 0.5) * 25;
+            idlePos[i*3+1] = (Math.random() - 0.5) * 20;
+            idlePos[i*3+2] = (Math.random() - 0.5) * 20;
+
+            positions[i*3] = idlePos[i*3];
+            positions[i*3+1] = idlePos[i*3+1];
+            positions[i*3+2] = idlePos[i*3+2];
+            
             randoms[i] = Math.random() * 0.5 + 0.1;
         }
 
         geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const mat = new THREE.PointsMaterial({
-            size: 0.14, map: texture, transparent: true,
-            blending: THREE.AdditiveBlending, depthWrite: false, color: 0xfffcf0
+            size: 0.12, map: texture, transparent: true,
+            blending: THREE.AdditiveBlending, depthWrite: false, color: 0xffcc33
         });
         const particles = new THREE.Points(geo, mat);
-        // Độ nghiêng gốc
-        particles.rotation.x = 0.5;
-        particles.rotation.z = 0.3;
         scene.add(particles);
 
         // --- 3. ĐIỀU KHIỂN TAY ---
         let isHand = false;
-        let targetRotX = 0.5, targetRotY = 0, zoom = 15;
+        let rotX = 0, rotY = 0, zoom = 18;
 
         const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.55 });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6 });
 
         hands.onResults((res) => {
             if (res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
                 isHand = true;
-                const lm = res.multiHandLandmarks[0][9];
-                targetRotY = (lm.x - 0.5) * Math.PI * 1.2; // Xoay trái phải rộng hơn
-                targetRotX = (lm.y - 0.5) * Math.PI * 0.8 + 0.5; // Gộp độ nghiêng gốc
+                const lm = res.multiHandLandmarks[0];
+                
+                // Xoay cố định theo tâm (lm[9] là lòng bàn tay)
+                rotY = (lm[9].x - 0.5) * Math.PI;
+                rotX = (lm[9].y - 0.5) * Math.PI * 0.5;
 
-                const thumb = res.multiHandLandmarks[0][4];
-                const index = res.multiHandLandmarks[0][8];
-                const d = Math.hypot(thumb.x - index.x, thumb.y - index.y);
-                zoom = THREE.MathUtils.mapLinear(d, 0.05, 0.25, 18, 6.5);
+                // Zoom dựa trên khoảng cách ngón cái (4) và trỏ (8)
+                const d = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+                // Giới hạn: Xa nhất 18, gần nhất 8 (sát bề mặt)
+                zoom = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(d, 0.05, 0.25, 18, 8), 8, 18);
             } else {
                 isHand = false;
-                targetRotX = 0.5; 
-                zoom = 15;
+                zoom = THREE.MathUtils.lerp(zoom, 18, 0.02); // Tự lùi ra khi rút tay
             }
         });
 
         const camS = new Camera(videoElement, {
             onFrame: async () => { await hands.send({image: videoElement}); },
-            width: 480, height: 360
+            width: 640, height: 480
         });
         camS.start();
 
-        // --- 4. VÒNG LẶP ---
+        // --- 4. VÒNG LẶP ANIMATION ---
         function animate() {
             requestAnimationFrame(animate);
-            const time = Date.now() * 0.0003; 
+            const t = Date.now() * 0.0004; // Tốc độ thời gian chậm rãi
             const pos = particles.geometry.attributes.position.array;
 
             for (let i = 0; i < pCount; i++) {
-                const ix = i * 3, iy = i * 3 + 1, iz = i * 3 + 2;
                 let tx, ty, tz;
+                const s = randoms[i];
 
                 if (isHand) {
-                    // CÓ TAY: Hội tụ + Giao động "Thở" cực nhẹ
-                    const breath = Math.sin(time * 4 + i * 0.1) * 0.06;
-                    tx = basePos[ix] + breath;
-                    ty = basePos[iy] + breath;
-                    tz = basePos[iz] + breath;
+                    // CÓ TAY: Hút về tạo hình và dao động cực nhẹ (thở)
+                    const wave = Math.sin(t * 2 + i) * 0.05;
+                    tx = basePos[i*3] + wave;
+                    ty = basePos[i*3+1] + wave;
+                    tz = basePos[i*3+2] + wave;
                 } else {
-                    // RẢNH: Trôi lững lờ chậm rãi
-                    tx = idlePos[ix] + Math.sin(time * 5 * randoms[i]) * 3;
-                    ty = idlePos[iy] + Math.cos(time * 4 * randoms[i]) * 2;
-                    tz = idlePos[iz] + Math.sin(time * 3 * randoms[i]) * 3;
+                    // KHÔNG TAY: Bay lung tung uyển chuyển quanh màn hình
+                    tx = idlePos[i*3] + Math.sin(t * s * 2) * 3;
+                    ty = idlePos[i*3+1] + Math.cos(t * s * 1.5) * 3;
+                    tz = idlePos[i*3+2] + Math.sin(t * s) * 3;
                 }
 
-                const lerpSpeed = isHand ? 0.08 : 0.012;
-                pos[ix] += (tx - pos[ix]) * lerpSpeed;
-                pos[iy] += (ty - pos[iy]) * lerpSpeed;
-                pos[iz] += (tz - pos[iz]) * lerpSpeed;
+                // Chuyển trạng thái mượt (Lerp)
+                const speed = isHand ? 0.06 : 0.02; // Hút vào nhanh, trôi ra chậm
+                pos[i*3] += (tx - pos[i*3]) * speed;
+                pos[i*3+1] += (ty - pos[i*3+1]) * speed;
+                pos[i*3+2] += (tz - pos[i*3+2]) * speed;
             }
 
             particles.geometry.attributes.position.needsUpdate = true;
 
-            // Xoay mượt mà sang hai bên và lên xuống
-            particles.rotation.y = THREE.MathUtils.lerp(particles.rotation.y, targetRotY, 0.05);
-            particles.rotation.x = THREE.MathUtils.lerp(particles.rotation.x, targetRotX, 0.05);
+            // Xoay theo tay nhưng luôn giữ tâm cố định
+            particles.rotation.x = THREE.MathUtils.lerp(particles.rotation.x, rotX, 0.05);
+            particles.rotation.y = THREE.MathUtils.lerp(particles.rotation.y, rotY, 0.05);
+            particles.rotation.y += 0.001; // Tự quay chậm cho sinh động
             
-            // Xoay nền tự thân cực chậm
-            if(!isHand) particles.rotation.y += 0.0008;
-
             camera.position.z = THREE.MathUtils.lerp(camera.position.z, zoom, 0.05);
+
             composer.render();
         }
         animate();

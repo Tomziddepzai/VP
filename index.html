@@ -1,97 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand Galaxy Fix</title>
+    <title>Hand Gesture Galaxy</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; color: white; }
-        #status { position: absolute; top: 10px; left: 10px; z-index: 10; font-family: sans-serif; font-size: 12px; color: #0f0; }
+        body { margin: 0; overflow: hidden; background: #000; }
         canvas { display: block; }
+        #video_container { position: absolute; bottom: 10px; right: 10px; width: 150px; opacity: 0.5; transform: scaleX(-1); }
     </style>
 </head>
 <body>
-    <div id="status">Đang khởi tạo hệ thống...</div>
-    <video id="input_video" style="display:none" playsinline></video>
+    <video id="input_video" style="display:none"></video>
+    <div id="video_container"><canvas id="output_canvas" style="width:100%"></canvas></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
     <script type="module">
-        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import * as THREE from 'three';
+        // Thêm thư viện nhận diện tay của Google
+        import { Hands } from 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
+        import { Camera } from 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
 
-        const status = document.getElementById('status');
-        const videoElement = document.getElementById('input_video');
-
-        // 1. Khởi tạo Three.js
+        // 1. Setup Three.js (Hạt lấp lánh như video 2)
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Tạo hạt lấp lánh
-        const count = 50000;
-        const geo = new THREE.BufferGeometry();
-        const pos = new Float32Array(count * 3);
-        for(let i=0; i<count*3; i++) pos[i] = (Math.random() - 0.5) * 30;
-        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-        
-        const mat = new THREE.PointsMaterial({ size: 0.03, color: 0xffcc66, transparent: true, blending: THREE.AdditiveBlending });
-        const stars = new THREE.Points(geo, mat);
-        scene.add(stars);
-        camera.position.z = 12;
+        // Tạo 100,000 hạt sáng vàng/trắng
+        const pointsGeo = new THREE.BufferGeometry();
+        const count = 100000;
+        const positions = new Float32Array(count * 3);
+        const velocities = new Float32Array(count * 3);
 
-        // 2. Cấu hình Hands với xử lý lỗi
-        let handX = 0, handY = 0;
-
-        try {
-            const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-            hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
-
-            hands.onResults((results) => {
-                status.innerText = results.multiHandLandmarks.length > 0 ? "Đã thấy tay - Đang tương tác" : "Hãy đưa tay trước camera";
-                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                    const lm = results.multiHandLandmarks[0];
-                    handX = (lm[8].x - 0.5) * 25;
-                    handY = -(lm[8].y - 0.5) * 15;
-                }
-            });
-
-            const cam = new Camera(videoElement, {
-                onFrame: async () => { await hands.send({image: videoElement}); },
-                width: 640, height: 480
-            });
-            
-            cam.start().then(() => {
-                status.innerText = "Camera đã sẵn sàng!";
-            }).catch(err => {
-                status.innerText = "Lỗi Camera: " + err;
-            });
-
-        } catch (e) {
-            status.innerText = "Lỗi khởi tạo: " + e;
+        for(let i=0; i<count*3; i++) {
+            positions[i] = (Math.random() - 0.5) * 20;
+            velocities[i] = 0;
         }
+        pointsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
+        const pointsMat = new THREE.PointsMaterial({
+            size: 0.02,
+            color: 0xffcc66, // Màu vàng lung linh như ảnh 2
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const starSystem = new THREE.Points(pointsGeo, pointsMat);
+        scene.add(starSystem);
+        camera.position.z = 10;
+
+        // 2. Nhận diện bàn tay và cử chỉ
+        const videoElement = document.getElementById('input_video');
+        let handX = 0, handY = 0, isPinching = false;
+
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
+
+        hands.onResults((results) => {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                // Lấy tọa độ ngón trỏ (index 8)
+                handX = (landmarks[8].x - 0.5) * 20;
+                handY = -(landmarks[8].y - 0.5) * 10;
+                
+                // Tính khoảng cách ngón cái và ngón trỏ để check "Pinch" (thu phóng)
+                const dx = landmarks[4].x - landmarks[8].x;
+                const dy = landmarks[4].y - landmarks[8].y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                isPinching = distance < 0.05;
+            }
+        });
+
+        const cam = new Camera(videoElement, {
+            onFrame: async () => { await hands.send({image: videoElement}); },
+            width: 640, height: 480
+        });
+        cam.start();
+
+        // 3. Animation: Hạt bay theo tay
         function animate() {
             requestAnimationFrame(animate);
-            // Hiệu ứng hạt đuổi theo tay
-            const positions = stars.geometry.attributes.position.array;
+            const pos = starSystem.geometry.attributes.position.array;
+
             for(let i=0; i<count; i++) {
-                positions[i*3] += (handX - positions[i*3]) * 0.01;
-                positions[i*3+1] += (handY - positions[i*3+1]) * 0.01;
+                const ix = i * 3, iy = i * 3 + 1, iz = i * 3 + 2;
+
+                // Lực hút về phía bàn tay
+                pos[ix] += (handX - pos[ix]) * 0.02;
+                pos[iy] += (handY - pos[iy]) * 0.02;
+
+                // Nếu đang Pinch (chụm tay) thì zoom camera vào
+                if(isPinching) {
+                    camera.position.z -= 0.01;
+                } else {
+                    if(camera.position.z < 10) camera.position.z += 0.01;
+                }
             }
-            stars.geometry.attributes.position.needsUpdate = true;
-            stars.rotation.y += 0.001;
+            starSystem.geometry.attributes.position.needsUpdate = true;
             renderer.render(scene, camera);
         }
         animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>

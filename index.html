@@ -1,82 +1,99 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Hand Gesture Galaxy</title>
+    <meta charset="UTF-8">
+    <title>Magic Particle Sphere</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; }
-        #video_container { position: absolute; bottom: 10px; right: 10px; width: 150px; opacity: 0.5; transform: scaleX(-1); }
+        #status { position: absolute; top: 10px; left: 10px; color: #fbff00; font-family: monospace; z-index: 100; }
     </style>
 </head>
 <body>
-    <video id="input_video" style="display:none"></video>
-    <div id="video_container"><canvas id="output_canvas" style="width:100%"></canvas></div>
+    <div id="status">Đang tải AI nhận diện tay...</div>
+    <video id="input_video" style="display:none" playsinline></video>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <script type="module">
-        import * as THREE from 'three';
-        // Thêm thư viện nhận diện tay của Google
-        import { Hands } from 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
-        import { Camera } from 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 
-        // 1. Setup Three.js (Hạt lấp lánh như video 2)
+        const videoElement = document.getElementById('input_video');
+        const status = document.getElementById('status');
+
+        // 1. Setup Three.js với hiệu ứng Bloom nhẹ
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Tạo 100,000 hạt sáng vàng/trắng
-        const pointsGeo = new THREE.BufferGeometry();
-        const count = 100000;
+        camera.position.z = 15;
+
+        // Tạo Texture hạt tròn lấp lánh (để hết bị vuông thô)
+        const createCircleTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.2, 'rgba(255,200,0,0.8)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(canvas);
+        };
+
+        // 2. Khởi tạo 50,000 hạt
+        const count = 50000;
+        const geo = new THREE.BufferGeometry();
         const positions = new Float32Array(count * 3);
-        const velocities = new Float32Array(count * 3);
+        const randomTargets = new Float32Array(count * 3); // Vị trí lúc bay lung tung
 
-        for(let i=0; i<count*3; i++) {
-            positions[i] = (Math.random() - 0.5) * 20;
-            velocities[i] = 0;
+        for(let i=0; i<count; i++) {
+            positions[i*3] = (Math.random() - 0.5) * 40;
+            positions[i*3+1] = (Math.random() - 0.5) * 40;
+            positions[i*3+2] = (Math.random() - 0.5) * 40;
+            
+            randomTargets[i*3] = positions[i*3];
+            randomTargets[i*3+1] = positions[i*3+1];
+            randomTargets[i*3+2] = positions[i*3+2];
         }
-        pointsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-        const pointsMat = new THREE.PointsMaterial({
-            size: 0.02,
-            color: 0xffcc66, // Màu vàng lung linh như ảnh 2
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const mat = new THREE.PointsMaterial({
+            size: 0.08,
+            map: createCircleTexture(),
             transparent: true,
             blending: THREE.AdditiveBlending,
-            depthWrite: false
+            depthWrite: false,
+            color: 0xffcc00
         });
 
-        const starSystem = new THREE.Points(pointsGeo, pointsMat);
-        scene.add(starSystem);
-        camera.position.z = 10;
+        const particles = new THREE.Points(geo, mat);
+        scene.add(particles);
 
-        // 2. Nhận diện bàn tay và cử chỉ
-        const videoElement = document.getElementById('input_video');
-        let handX = 0, handY = 0, isPinching = false;
+        // 3. AI Nhận diện tay
+        let handX = 0, handY = 0, isHandVisible = false, zoomLevel = 15;
 
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6 });
 
         hands.onResults((results) => {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const landmarks = results.multiHandLandmarks[0];
-                // Lấy tọa độ ngón trỏ (index 8)
-                handX = (landmarks[8].x - 0.5) * 20;
-                handY = -(landmarks[8].y - 0.5) * 10;
-                
-                // Tính khoảng cách ngón cái và ngón trỏ để check "Pinch" (thu phóng)
-                const dx = landmarks[4].x - landmarks[8].x;
-                const dy = landmarks[4].y - landmarks[8].y;
-                const distance = Math.sqrt(dx*dx + dy*dy);
-                isPinching = distance < 0.05;
+                isHandVisible = true;
+                const lm = results.multiHandLandmarks[0];
+                handX = (lm[9].x - 0.5) * -30; // Tâm bàn tay
+                handY = (lm[9].y - 0.5) * -20;
+
+                // Tính khoảng cách ngón cái (4) và ngón trỏ (8) để Zoom
+                const d = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+                // Kéo ra (d lớn) -> zoomLevel nhỏ (lại gần), Chụm vào (d nhỏ) -> zoomLevel lớn (ra xa)
+                zoomLevel = THREE.MathUtils.lerp(zoomLevel, THREE.MathUtils.mapLinear(d, 0.05, 0.3, 25, 5), 0.1);
+                status.innerText = "Đang điều khiển Vũ trụ...";
+            } else {
+                isHandVisible = false;
+                status.innerText = "Hãy đưa tay vào camera";
             }
         });
 
@@ -86,26 +103,37 @@
         });
         cam.start();
 
-        // 3. Animation: Hạt bay theo tay
+        // 4. Vòng lặp chính - Logic bay hạt
         function animate() {
             requestAnimationFrame(animate);
-            const pos = starSystem.geometry.attributes.position.array;
+            const posAttr = particles.geometry.attributes.position;
+            
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, zoomLevel, 0.05);
 
             for(let i=0; i<count; i++) {
-                const ix = i * 3, iy = i * 3 + 1, iz = i * 3 + 2;
-
-                // Lực hút về phía bàn tay
-                pos[ix] += (handX - pos[ix]) * 0.02;
-                pos[iy] += (handY - pos[iy]) * 0.02;
-
-                // Nếu đang Pinch (chụm tay) thì zoom camera vào
-                if(isPinching) {
-                    camera.position.z -= 0.01;
+                let tx, ty, tz;
+                if(isHandVisible) {
+                    // Tạo hình cầu tại vị trí tay
+                    const phi = Math.acos(-1 + (2 * i) / count);
+                    const theta = Math.sqrt(count * Math.PI) * phi;
+                    tx = handX + 4 * Math.sin(phi) * Math.cos(theta);
+                    ty = handY + 4 * Math.sin(phi) * Math.sin(theta);
+                    tz = 4 * Math.cos(phi);
                 } else {
-                    if(camera.position.z < 10) camera.position.z += 0.01;
+                    // Bay lung tung theo vị trí ngẫu nhiên ban đầu + độ nhiễu (noise)
+                    tx = randomTargets[i*3] + Math.sin(Date.now() * 0.001 + i) * 0.5;
+                    ty = randomTargets[i*3+1] + Math.cos(Date.now() * 0.001 + i) * 0.5;
+                    tz = randomTargets[i*3+2];
                 }
+
+                // Di chuyển hạt mượt mà đến đích (Lerp)
+                posAttr.array[i*3] += (tx - posAttr.array[i*3]) * 0.1;
+                posAttr.array[i*3+1] += (ty - posAttr.array[i*3+1]) * 0.1;
+                posAttr.array[i*3+2] += (tz - posAttr.array[i*3+2]) * 0.1;
             }
-            starSystem.geometry.attributes.position.needsUpdate = true;
+
+            posAttr.needsUpdate = true;
+            particles.rotation.y += 0.002;
             renderer.render(scene, camera);
         }
         animate();

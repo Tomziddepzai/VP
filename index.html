@@ -1,282 +1,229 @@
 <!DOCTYPE html>
-
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Memory Planet ✦</title>
+<title>✦ Ký ức của chúng mình ✦</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #000; overflow: hidden; font-family: 'Georgia', serif; cursor: none; }
-canvas { display: block; }
-video { display: none; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; overflow:hidden; cursor:none; }
+canvas { display:block; }
+video  { display:none; }
+
+/* ── CURSOR ── */
+#cursor {
+  position:fixed; width:8px; height:8px;
+  border-radius:50%; pointer-events:none; z-index:9999;
+  background:rgba(255,220,100,0.9);
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 12px rgba(255,200,60,0.8);
+  transition:width .2s,height .2s;
+}
+
+/* ── INTRO TEXT ── */
+#intro {
+  position:fixed; inset:0; z-index:50;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  pointer-events:none;
+  transition:opacity 1.5s;
+}
+#intro h1 {
+  font-family:'Georgia',serif;
+  font-size:clamp(22px,4vw,38px);
+  font-weight:normal; letter-spacing:6px;
+  color:rgba(255,235,160,0);
+  animation:fadeTitle 3s ease-out 0.5s forwards;
+}
+#intro p {
+  margin-top:16px;
+  font-family:'Georgia',serif;
+  font-size:clamp(11px,1.8vw,14px);
+  letter-spacing:4px; text-transform:uppercase;
+  color:rgba(255,200,80,0);
+  animation:fadeTitle 3s ease-out 1.4s forwards;
+}
+@keyframes fadeTitle {
+  to { color:rgba(255,235,160,0.7); }
+}
 
 /* ── HUD ── */
 #hud {
-position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-display: flex; gap: 10px; align-items: center;
-background: rgba(255,255,255,0.04);
-border: 0.5px solid rgba(255,220,100,0.25);
-border-radius: 40px; padding: 8px 20px;
-backdrop-filter: blur(8px);
-transition: opacity 0.6s;
-z-index: 100;
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+  z-index:100; pointer-events:none;
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,0.03);
+  border:0.5px solid rgba(255,220,80,0.2);
+  border-radius:40px; padding:8px 22px;
+  backdrop-filter:blur(6px);
+  opacity:0; animation:fadeHud 1s ease-out 4s forwards;
 }
-#hud span {
-font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-color: rgba(255,220,100,0.55);
-}
+@keyframes fadeHud { to { opacity:1; } }
 #hud .dot {
-width: 6px; height: 6px; border-radius: 50%;
-background: rgba(255,200,60,0.4);
-animation: pulse 2s ease-in-out infinite;
+  width:5px; height:5px; border-radius:50%;
+  background:rgba(255,200,60,0.5);
+  animation:blink 2.5s ease-in-out infinite;
 }
-@keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
-
-/* ── ADMIN PANEL ── */
-#admin-btn {
-position: fixed; top: 16px; right: 16px; z-index: 200;
-background: rgba(255,255,255,0.06);
-border: 0.5px solid rgba(255,220,100,0.3);
-color: rgba(255,220,100,0.7);
-font-size: 11px; letter-spacing: 2px;
-padding: 7px 14px; border-radius: 20px;
-cursor: pointer; transition: all 0.3s;
-}
-#admin-btn:hover { background: rgba(255,220,100,0.12); }
-
-#admin-panel {
-position: fixed; top: 0; right: 0; bottom: 0; width: 340px;
-background: rgba(8,6,2,0.96);
-border-left: 0.5px solid rgba(255,220,100,0.2);
-z-index: 300; transform: translateX(100%);
-transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
-overflow-y: auto; padding: 24px;
-}
-#admin-panel.open { transform: translateX(0); }
-#admin-panel h2 {
-font-size: 13px; letter-spacing: 3px; color: rgba(255,220,100,0.8);
-text-transform: uppercase; margin-bottom: 20px;
-padding-bottom: 12px; border-bottom: 0.5px solid rgba(255,220,100,0.15);
-}
-#admin-panel label {
-display: block; font-size: 10px; letter-spacing: 2px;
-color: rgba(255,220,100,0.45); margin-bottom: 5px; margin-top: 14px;
-}
-#admin-panel input, #admin-panel textarea {
-width: 100%; background: rgba(255,255,255,0.04);
-border: 0.5px solid rgba(255,220,100,0.2);
-color: rgba(255,240,200,0.9); font-size: 12px;
-padding: 8px 10px; border-radius: 8px; outline: none;
-font-family: inherit;
-}
-#admin-panel textarea { height: 60px; resize: vertical; }
-#admin-panel input:focus, #admin-panel textarea:focus {
-border-color: rgba(255,220,100,0.5);
-}
-.admin-photo-item {
-background: rgba(255,255,255,0.03);
-border: 0.5px solid rgba(255,220,100,0.15);
-border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
-display: flex; align-items: center; gap: 10px;
-}
-.admin-photo-item img {
-width: 44px; height: 44px; object-fit: cover;
-border-radius: 6px; border: 0.5px solid rgba(255,220,100,0.2);
-}
-.admin-photo-item .info { flex: 1; min-width: 0; }
-.admin-photo-item .info p {
-font-size: 11px; color: rgba(255,240,200,0.8);
-white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.admin-photo-item .info span {
-font-size: 10px; color: rgba(255,200,80,0.45);
-}
-.admin-photo-item .del {
-color: rgba(255,80,80,0.5); cursor: pointer; font-size: 16px;
-line-height: 1; background: none; border: none;
-transition: color 0.2s;
-}
-.admin-photo-item .del:hover { color: rgba(255,80,80,0.9); }
-.btn-primary {
-width: 100%; margin-top: 12px;
-background: rgba(255,200,60,0.12);
-border: 0.5px solid rgba(255,200,60,0.4);
-color: rgba(255,220,100,0.9); font-size: 11px;
-letter-spacing: 2px; text-transform: uppercase;
-padding: 10px; border-radius: 10px; cursor: pointer;
-transition: all 0.3s;
-}
-.btn-primary:hover { background: rgba(255,200,60,0.22); }
-.btn-danger {
-width: 100%; margin-top: 6px;
-background: transparent;
-border: 0.5px solid rgba(255,80,80,0.3);
-color: rgba(255,100,100,0.6); font-size: 10px;
-letter-spacing: 1px; text-transform: uppercase;
-padding: 7px; border-radius: 8px; cursor: pointer;
-transition: all 0.3s;
-}
-.btn-danger:hover { border-color: rgba(255,80,80,0.6); color: rgba(255,100,100,0.9); }
-#admin-close {
-position: absolute; top: 16px; right: 16px;
-background: none; border: none; color: rgba(255,220,100,0.5);
-font-size: 20px; cursor: pointer; line-height: 1;
+@keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+#hud span {
+  font-family:'Georgia',serif;
+  font-size:11px; letter-spacing:3px;
+  color:rgba(255,210,100,0.55);
 }
 
 /* ── PHOTO VIEWER ── */
-#photo-viewer {
-position: fixed; inset: 0; z-index: 400;
-background: rgba(0,0,0,0); display: flex;
-align-items: center; justify-content: center;
-opacity: 0; pointer-events: none;
-transition: all 0.5s cubic-bezier(0.16,1,0.3,1);
+#viewer {
+  position:fixed; inset:0; z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0);
+  opacity:0; pointer-events:none;
+  transition:opacity .5s, background .5s;
 }
-#photo-viewer.open {
-background: rgba(0,0,0,0.88); opacity: 1; pointer-events: all;
+#viewer.open {
+  opacity:1; pointer-events:all;
+  background:rgba(0,0,0,0.9);
 }
-#photo-viewer .frame {
-position: relative; max-width: 520px; width: 90%;
-transform: scale(0.9);
-transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+#viewer .card {
+  position:relative; max-width:480px; width:88%;
+  transform:scale(.92) translateY(12px);
+  transition:transform .5s cubic-bezier(.16,1,.3,1);
 }
-#photo-viewer.open .frame { transform: scale(1); }
-#photo-viewer img {
-width: 100%; border-radius: 16px;
-border: 1px solid rgba(255,220,100,0.25);
-box-shadow: 0 0 80px rgba(255,180,40,0.12);
-}
-#photo-viewer .caption {
-text-align: center; margin-top: 16px;
-}
-#photo-viewer .caption h3 {
-font-size: 18px; color: rgba(255,240,200,0.95);
-font-weight: normal; letter-spacing: 1px;
-}
-#photo-viewer .caption p {
-font-size: 12px; color: rgba(255,200,80,0.55);
-letter-spacing: 2px; margin-top: 4px; text-transform: uppercase;
-}
-#photo-viewer .close-viewer {
-position: absolute; top: -16px; right: -16px;
-width: 36px; height: 36px; border-radius: 50%;
-background: rgba(255,255,255,0.08);
-border: 0.5px solid rgba(255,220,100,0.3);
-color: rgba(255,220,100,0.8); font-size: 18px;
-cursor: pointer; display: flex; align-items: center;
-justify-content: center; transition: all 0.2s;
-}
-#photo-viewer .close-viewer:hover { background: rgba(255,220,100,0.15); }
-#photo-viewer .nav-btn {
-position: absolute; top: 50%; transform: translateY(-50%);
-background: rgba(255,255,255,0.06);
-border: 0.5px solid rgba(255,220,100,0.2);
-color: rgba(255,220,100,0.7); font-size: 20px;
-width: 40px; height: 40px; border-radius: 50%;
-cursor: pointer; display: flex; align-items: center;
-justify-content: center; transition: all 0.2s;
-}
-#photo-viewer .nav-btn:hover { background: rgba(255,220,100,0.12); }
-#photo-viewer .nav-prev { left: -56px; }
-#photo-viewer .nav-next { right: -56px; }
+#viewer.open .card { transform:scale(1) translateY(0); }
 
-/* ── ZOOM INDICATOR ── */
-#zoom-hint {
-position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-text-align: center; pointer-events: none; z-index: 50;
-opacity: 0; transition: opacity 1s;
+#viewer img {
+  width:100%; border-radius:14px;
+  border:1px solid rgba(255,210,80,0.3);
+  display:block;
 }
-#zoom-hint p {
-font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
-color: rgba(255,200,80,0.5);
+/* Polaroid glow */
+#viewer .card::before {
+  content:'';
+  position:absolute; inset:-1px;
+  border-radius:15px;
+  background:linear-gradient(135deg,rgba(255,210,80,.15),rgba(255,150,60,.05),rgba(255,210,80,.1));
+  pointer-events:none;
 }
+#viewer .caption {
+  text-align:center; margin-top:18px; padding:0 8px;
+}
+#viewer .caption h3 {
+  font-family:'Georgia',serif; font-weight:normal;
+  font-size:clamp(16px,3vw,22px);
+  color:rgba(255,240,195,0.95); letter-spacing:2px;
+  line-height:1.4;
+}
+#viewer .caption p {
+  margin-top:6px;
+  font-family:'Georgia',serif; font-size:12px;
+  letter-spacing:3px; text-transform:uppercase;
+  color:rgba(255,200,80,0.45);
+}
+/* nav */
+.nav {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:38px; height:38px; border-radius:50%;
+  background:rgba(255,255,255,0.06);
+  border:0.5px solid rgba(255,210,80,0.25);
+  color:rgba(255,220,100,.8); font-size:20px;
+  cursor:pointer; display:flex; align-items:center;
+  justify-content:center; transition:.2s;
+}
+.nav:hover { background:rgba(255,210,80,.14); }
+.nav-l { left:-52px; }
+.nav-r { right:-52px; }
+.close-v {
+  position:absolute; top:-14px; right:-14px;
+  width:32px; height:32px; border-radius:50%;
+  background:rgba(30,20,10,.9);
+  border:0.5px solid rgba(255,210,80,.3);
+  color:rgba(255,220,100,.7); font-size:17px;
+  cursor:pointer; display:flex; align-items:center;
+  justify-content:center; transition:.2s;
+}
+.close-v:hover { color:rgba(255,220,100,1); }
 
-/* ── STATUS ── */
-#status {
-position: fixed; top: 16px; left: 16px; z-index: 100;
-font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-color: rgba(100,255,180,0.6); pointer-events: none;
+/* progress dots */
+#dots {
+  position:fixed; bottom:72px; left:50%; transform:translateX(-50%);
+  display:flex; gap:6px; z-index:201; pointer-events:none;
+  opacity:0; transition:opacity .4s;
 }
+#viewer.open + #dots { opacity:1; }
+.dot-ind {
+  width:5px; height:5px; border-radius:50%;
+  background:rgba(255,200,80,.25); transition:.3s;
+}
+.dot-ind.active { background:rgba(255,200,80,.85); transform:scale(1.3); }
 </style>
-
 </head>
 <body>
 
+<div id="cursor"></div>
 <video id="input_video" playsinline></video>
 
-<div id="status">Đang khởi động...</div>
+<!-- intro -->
+<div id="intro">
+  <h1>✦ Ký ức của chúng mình ✦</h1>
+  <p>Đưa tay vào · Nhíu ngón để khám phá</p>
+</div>
 
-<!-- HUD -->
-
+<!-- hud -->
 <div id="hud">
   <div class="dot"></div>
-  <span id="hud-text">Đưa tay vào khung hình</span>
+  <span id="hud-txt">Đưa tay vào khung hình</span>
 </div>
 
-<!-- ADMIN -->
-
-<button id="admin-btn" onclick="toggleAdmin()">✦ ADMIN</button>
-
-<div id="admin-panel">
-  <button id="admin-close" onclick="toggleAdmin()">×</button>
-  <h2>Ký ức hành tinh</h2>
-
-<label>Firebase URL</label>
-<input id="fb-url" type="text" placeholder="https://xxx.firebaseio.com" />
-
-<label>Firebase API Key</label>
-<input id="fb-key" type="text" placeholder="AIza..." />
-
-<button class="btn-primary" onclick="saveFirebaseConfig()">💾 Lưu cấu hình Firebase</button>
-
-  <div style="margin-top:24px; padding-top:16px; border-top:0.5px solid rgba(255,220,100,0.1)">
-    <label>Thêm ảnh kỷ niệm</label>
-    <input id="photo-url" type="text" placeholder="URL ảnh (ImgBB, Firebase...)" />
-    <label>Tên / Chú thích</label>
-    <input id="photo-name" type="text" placeholder="Sinh nhật 2023..." />
-    <label>Ngày tháng</label>
-    <input id="photo-date" type="text" placeholder="12.06.2023" />
-    <button class="btn-primary" onclick="addPhoto()">＋ Thêm ảnh</button>
-  </div>
-
-  <div style="margin-top:24px; padding-top:16px; border-top:0.5px solid rgba(255,220,100,0.1)">
-    <label>Danh sách ảnh (<span id="photo-count">0</span>/15)</label>
-    <div id="photo-list"></div>
-  </div>
-
-  <div style="margin-top:20px; padding-top:16px; border-top:0.5px solid rgba(255,220,100,0.1)">
-    <label>Cài đặt hiệu ứng</label>
-    <label>Mật độ hạt</label>
-    <input id="density-val" type="range" min="8000" max="35000" value="18000" oninput="updateDensityLabel(this.value)">
-    <span id="density-label" style="font-size:10px;color:rgba(255,200,80,0.5)">18000 hạt</span>
-    <button class="btn-primary" onclick="applySettings()" style="margin-top:10px">✓ Áp dụng</button>
-    <button class="btn-danger" onclick="resetAll()">↺ Reset tất cả</button>
-  </div>
-</div>
-
-<!-- PHOTO VIEWER -->
-
-<div id="photo-viewer">
-  <div class="frame">
-    <button class="close-viewer" onclick="closeViewer()">×</button>
-    <button class="nav-btn nav-prev" onclick="navigateViewer(-1)">‹</button>
-    <button class="nav-btn nav-next" onclick="navigateViewer(1)">›</button>
-    <img id="viewer-img" src="" alt="">
+<!-- viewer -->
+<div id="viewer">
+  <div class="card">
+    <button class="close-v" onclick="closeV()">×</button>
+    <button class="nav nav-l" onclick="navV(-1)">‹</button>
+    <button class="nav nav-r" onclick="navV(1)">›</button>
+    <img id="vimg" src="" alt="">
     <div class="caption">
-      <h3 id="viewer-name"></h3>
-      <p id="viewer-date"></p>
+      <h3 id="vname"></h3>
+      <p id="vdate"></p>
     </div>
   </div>
 </div>
+<div id="dots"></div>
 
-<div id="zoom-hint"><p>Phóng to để khám phá ký ức</p></div>
+<!-- cursor track -->
+<script>
+const cur = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX+'px';
+  cur.style.top  = e.clientY+'px';
+});
+</script>
+
+<!-- ══════════════════════════════════════════
+     ✦  THÊM / SỬA ẢNH Ở ĐÂY
+     Điền url, name, date cho mỗi ảnh
+     Tối đa 15 ảnh
+════════════════════════════════════════════ -->
+<script>
+const PHOTOS = [
+  // { url: 'https://...', name: 'Lần đầu gặp nhau', date: '14.02.2022' },
+  // { url: 'https://...', name: 'Cà phê sáng hôm ấy', date: '20.03.2022' },
+  // { url: 'https://...', name: 'Sinh nhật em', date: '05.07.2022' },
+  // ...
+
+  // === PLACEHOLDER (xóa đi khi có ảnh thật) ===
+  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau', date:'14.02.2022' },
+  { url:'https://picsum.photos/seed/b2/600/450', name:'Cà phê sáng hôm ấy', date:'20.03.2022' },
+  { url:'https://picsum.photos/seed/c3/600/450', name:'Sinh nhật em', date:'05.07.2022' },
+  { url:'https://picsum.photos/seed/d4/600/450', name:'Chuyến đi Đà Lạt', date:'10.09.2022' },
+  { url:'https://picsum.photos/seed/e5/600/450', name:'Mưa hôm ấy', date:'03.11.2022' },
+  { url:'https://picsum.photos/seed/f6/600/450', name:'Giáng sinh đầu tiên', date:'25.12.2022' },
+  { url:'https://picsum.photos/seed/g7/600/450', name:'Tết bên nhau', date:'22.01.2023' },
+  { url:'https://picsum.photos/seed/h8/600/450', name:'Buổi chiều ở biển', date:'15.04.2023' },
+];
+</script>
 
 <!-- THREE.JS -->
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
 <script type="importmap">
 {
   "imports": {
@@ -289,614 +236,438 @@ color: rgba(100,255,180,0.6); pointer-events: none;
 <script type="module">
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-// ─────────────────────────────────────────
-// GLOBALS
-// ─────────────────────────────────────────
-const RING_TILT = 0.22;
-const GLOBE_R   = 4.5;
-const ZOOM_REVEAL = 9.5; // ngưỡng zoom để hiện ảnh
+// ─────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────
+const GLOBE_R      = 4.8;
+const CORE_COUNT   = 20000;   // đủ đẹp, không quá nặng
+const RING_COUNT   = 9000;
+const RING_TILT    = 0.24;    // ~14° nghiêng
+const ZOOM_REVEAL  = 9.2;     // zoom vào dưới đây → hiện ảnh
+const ZOOM_MIN     = 5.0;
+const ZOOM_MAX     = 18.0;
+const ZOOM_DEFAULT = 15.5;
 
-window._photos = []; // {url, name, date, sprite, angle, phi}
-window._currentViewerIdx = 0;
-window._zoomLevel = 16;
-window._isHand = false;
-
-// ─────────────────────────────────────────
+// ─────────────────────────────────────
 // SCENE
-// ─────────────────────────────────────────
+// ─────────────────────────────────────
 const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 1000);
-camera.position.z = 16;
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 1000);
+camera.position.z = ZOOM_DEFAULT;
 
-const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setClearColor(0x000000, 1);
 document.body.appendChild(renderer.domElement);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 2.8, 0.55, 0.06);
+const bloom = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  3.0, 0.55, 0.05
+);
 composer.addPass(bloom);
 
-// ─────────────────────────────────────────
+// ─────────────────────────────────────
 // TEXTURES
-// ─────────────────────────────────────────
-function makeGlowTex(size, r, g, b) {
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
+// ─────────────────────────────────────
+function glowTex(size, r, g, b) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  const ctx = cv.getContext('2d');
   const grd = ctx.createRadialGradient(size/2,size/2,0, size/2,size/2,size/2);
-  grd.addColorStop(0,   `rgba(${r},${g},${b},1)`);
-  grd.addColorStop(0.15,`rgba(${r},${g},${b},0.95)`);
-  grd.addColorStop(0.4, `rgba(${r},${g},${b},0.4)`);
-  grd.addColorStop(0.7, `rgba(${r},${g},${b},0.1)`);
-  grd.addColorStop(1,   'rgba(0,0,0,0)');
+  grd.addColorStop(0,    `rgba(${r},${g},${b},1)`);
+  grd.addColorStop(0.12, `rgba(${r},${g},${b},0.95)`);
+  grd.addColorStop(0.38, `rgba(${r},${g},${b},0.45)`);
+  grd.addColorStop(0.65, `rgba(${r},${g},${b},0.1)`);
+  grd.addColorStop(1,    'rgba(0,0,0,0)');
   ctx.fillStyle = grd; ctx.fillRect(0,0,size,size);
-  return new THREE.CanvasTexture(c);
+  return new THREE.CanvasTexture(cv);
 }
-const texCore = makeGlowTex(64, 255, 248, 220);
-const texRing = makeGlowTex(32, 220, 230, 255);
+const texCore = glowTex(64, 255, 248, 210);  // vàng ngà ấm
+const texRing = glowTex(32, 215, 228, 255);  // xanh lạnh bạch kim
 
-// ─────────────────────────────────────────
-// PARTICLES — core
-// ─────────────────────────────────────────
-let coreCount = 18000;
-let particlesCore, geoCore, coreBase, coreRand, corePosArr;
+// ─────────────────────────────────────
+// PARTICLES — LÕI
+// ─────────────────────────────────────
+const geoCore   = new THREE.BufferGeometry();
+const corePosA  = new Float32Array(CORE_COUNT * 3);
+const coreBase  = new Float32Array(CORE_COUNT * 3);
+const coreRand  = new Float32Array(CORE_COUNT * 4);
 
-function buildCore(count) {
-  if (particlesCore) { scene.remove(particlesCore); geoCore.dispose(); }
-  coreCount = count;
-  geoCore    = new THREE.BufferGeometry();
-  corePosArr = new Float32Array(count * 3);
-  coreBase   = new Float32Array(count * 3);
-  coreRand   = new Float32Array(count * 4);
+for (let i = 0; i < CORE_COUNT; i++) {
+  // Phân bố Fibonacci sphere
+  const phi   = Math.acos(-1 + (2*i) / CORE_COUNT);
+  const theta = Math.sqrt(CORE_COUNT * Math.PI) * phi;
+  const r     = GLOBE_R + Math.random() * 0.65;
+  coreBase[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+  coreBase[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+  coreBase[i*3+2] = r * Math.cos(phi);
 
-  for (let i = 0; i < count; i++) {
-    const phi   = Math.acos(-1 + (2*i)/count);
-    const theta = Math.sqrt(count * Math.PI) * phi;
-    const r     = GLOBE_R + Math.random() * 0.7;
-    coreBase[i*3]   = r * Math.sin(phi)*Math.cos(theta);
-    coreBase[i*3+1] = r * Math.sin(phi)*Math.sin(theta);
-    coreBase[i*3+2] = r * Math.cos(phi);
+  // Vị trí bay ban đầu — dòng chảy mềm
+  corePosA[i*3]   = (Math.random()-.5) * 22;
+  corePosA[i*3+1] = (Math.random()-.5) * 22;
+  corePosA[i*3+2] = (Math.random()-.5) * 22;
 
-    const sp = 18;
-    corePosArr[i*3]   = (Math.random()-.5)*sp;
-    corePosArr[i*3+1] = (Math.random()-.5)*sp;
-    corePosArr[i*3+2] = (Math.random()-.5)*sp;
-
-    coreRand[i*4]   = Math.random()*0.28+0.08;
-    coreRand[i*4+1] = Math.random()*Math.PI*2;
-    coreRand[i*4+2] = Math.random()*Math.PI*2;
-    coreRand[i*4+3] = Math.random();
-  }
-  geoCore.setAttribute('position', new THREE.BufferAttribute(corePosArr,3));
-  const mat = new THREE.PointsMaterial({
-    size:0.15, map:texCore, transparent:true,
-    blending:THREE.AdditiveBlending, depthWrite:false, color:0xfff8dc
-  });
-  particlesCore = new THREE.Points(geoCore, mat);
-  scene.add(particlesCore);
+  coreRand[i*4]   = Math.random() * 0.26 + 0.07;   // speed
+  coreRand[i*4+1] = Math.random() * Math.PI * 2;    // phase1
+  coreRand[i*4+2] = Math.random() * Math.PI * 2;    // phase2
+  coreRand[i*4+3] = Math.random();                  // misc
 }
-buildCore(coreCount);
+geoCore.setAttribute('position', new THREE.BufferAttribute(corePosA, 3));
 
-// ─────────────────────────────────────────
-// PARTICLES — ring
-// ─────────────────────────────────────────
-const ringCount = 10000;
-const geoRing   = new THREE.BufferGeometry();
-const ringPos   = new Float32Array(ringCount*3);
-const ringBase  = new Float32Array(ringCount*3);
-const ringRand  = new Float32Array(ringCount*3);
+const matCore = new THREE.PointsMaterial({
+  size: 0.14, map: texCore, transparent: true,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+  color: 0xfff8d0
+});
+const pCore = new THREE.Points(geoCore, matCore);
+scene.add(pCore);
 
-for (let i = 0; i < ringCount; i++) {
-  const angle = Math.random()*Math.PI*2;
+// ─────────────────────────────────────
+// PARTICLES — VÀNH ĐAI
+// ─────────────────────────────────────
+const geoRing  = new THREE.BufferGeometry();
+const ringPosA = new Float32Array(RING_COUNT * 3);
+const ringBase = new Float32Array(RING_COUNT * 3);
+const ringRand = new Float32Array(RING_COUNT * 3);
+
+for (let i = 0; i < RING_COUNT; i++) {
+  const angle = Math.random() * Math.PI * 2;
   const u = Math.random();
-  const r = 6.5 + u*u*5.0;
-  const px = Math.cos(angle)*r;
-  const pz = Math.sin(angle)*r;
-  const py = (Math.random()-.5)*0.07;
-  ringBase[i*3]   = px;
-  ringBase[i*3+1] = py - pz*Math.sin(RING_TILT)*0.15;
-  ringBase[i*3+2] = pz*Math.cos(RING_TILT*0.15);
+  // r² distribution → dày trong, mỏng ngoài
+  const r = 6.8 + u * u * 5.2;
 
-  const s = 22;
-  ringPos[i*3]   = (Math.random()-.5)*s;
-  ringPos[i*3+1] = (Math.random()-.5)*s*0.4;
-  ringPos[i*3+2] = (Math.random()-.5)*s;
-  ringRand[i*3]   = Math.random()*0.18+0.05;
-  ringRand[i*3+1] = Math.random()*Math.PI*2;
+  const px = Math.cos(angle) * r;
+  const pz = Math.sin(angle) * r;
+  const py = (Math.random()-.5) * 0.07; // gần phẳng
+
+  // Tilt quanh X
+  ringBase[i*3]   = px;
+  ringBase[i*3+1] = py - pz * Math.sin(RING_TILT) * 0.14;
+  ringBase[i*3+2] = pz * Math.cos(RING_TILT * 0.14);
+
+  ringPosA[i*3]   = (Math.random()-.5) * 24;
+  ringPosA[i*3+1] = (Math.random()-.5) * 10;
+  ringPosA[i*3+2] = (Math.random()-.5) * 24;
+
+  ringRand[i*3]   = Math.random() * 0.18 + 0.04;
+  ringRand[i*3+1] = Math.random() * Math.PI * 2;
   ringRand[i*3+2] = Math.random();
 }
-geoRing.setAttribute('position', new THREE.BufferAttribute(ringPos,3));
+geoRing.setAttribute('position', new THREE.BufferAttribute(ringPosA, 3));
 const matRing = new THREE.PointsMaterial({
-  size:0.09, map:texRing, transparent:true,
-  blending:THREE.AdditiveBlending, depthWrite:false, color:0xe8f0ff
+  size: 0.08, map: texRing, transparent: true,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+  color: 0xe0eaff
 });
-const particlesRing = new THREE.Points(geoRing, matRing);
-scene.add(particlesRing);
+const pRing = new THREE.Points(geoRing, matRing);
+scene.add(pRing);
 
-// ─────────────────────────────────────────
+// ─────────────────────────────────────
 // PHOTO SPRITES
-// ─────────────────────────────────────────
-function createPhotoSprite(url, idx) {
-  const total  = window._photos.length;
-  // Phân bố đều trên cầu bằng Fibonacci
-  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-  const phi   = Math.acos(1 - 2*(idx+0.5)/Math.max(total,1));
-  const theta = goldenAngle * idx;
+// ─────────────────────────────────────
+const sprites = [];
+const GOLDEN  = Math.PI * (3 - Math.sqrt(5)); // golden angle
 
-  const sx = (GLOBE_R+0.3) * Math.sin(phi)*Math.cos(theta);
-  const sy = (GLOBE_R+0.3) * Math.sin(phi)*Math.sin(theta);
-  const sz = (GLOBE_R+0.3) * Math.cos(phi);
-
-  // Load ảnh → canvas → sprite
+function buildSprite(photo, idx, total) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    const W = 256, H = 192;
+
+  const doCreate = (src) => {
+    const W = 300, H = 224;
     const cv = document.createElement('canvas');
-    cv.width = W+20; cv.height = H+60;
+    cv.width = W + 24; cv.height = H + 72;
     const ctx = cv.getContext('2d');
 
-    // Frame vàng
-    ctx.save();
-    ctx.shadowColor = 'rgba(255,200,60,0.6)';
-    ctx.shadowBlur  = 12;
-    ctx.fillStyle   = 'rgba(255,220,80,0.18)';
-    ctx.strokeStyle = 'rgba(255,210,80,0.7)';
-    ctx.lineWidth   = 1.5;
-    roundRect(ctx, 10, 10, W, H, 10);
-    ctx.fill(); ctx.stroke();
-    ctx.restore();
+    // Nền polaroid tối mờ
+    ctx.fillStyle = 'rgba(8,5,2,0.82)';
+    roundRect(ctx, 0, 0, cv.width, cv.height, 12);
+    ctx.fill();
+
+    // Viền vàng mỏng
+    ctx.strokeStyle = 'rgba(255,210,80,0.55)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, 0, 0, cv.width, cv.height, 12);
+    ctx.stroke();
 
     // Ảnh
-    ctx.save();
-    ctx.beginPath();
-    roundRect(ctx, 10, 10, W, H, 10);
-    ctx.clip();
-    ctx.drawImage(img, 10, 10, W, H);
-    ctx.restore();
-
-    // Caption
-    const p = window._photos[idx];
-    if (p) {
-      ctx.fillStyle = 'rgba(255,235,170,0.92)';
-      ctx.font = 'bold 18px Georgia';
-      ctx.textAlign = 'center';
-      ctx.fillText(p.name || '', (W+20)/2, H+32);
-      ctx.fillStyle = 'rgba(255,200,80,0.55)';
-      ctx.font = '13px Georgia';
-      ctx.fillText(p.date || '', (W+20)/2, H+52);
+    if (src) {
+      ctx.save();
+      roundRect(ctx, 12, 12, W, H, 8);
+      ctx.clip();
+      ctx.drawImage(src, 12, 12, W, H);
+      ctx.restore();
     }
+
+    // Tên
+    ctx.fillStyle = 'rgba(255,238,185,0.95)';
+    ctx.font = `normal ${18}px Georgia`;
+    ctx.textAlign = 'center';
+    ctx.fillText(photo.name || '', cv.width/2, H + 38);
+
+    // Ngày
+    ctx.fillStyle = 'rgba(255,190,70,0.45)';
+    ctx.font = `13px Georgia`;
+    ctx.fillText(photo.date || '', cv.width/2, H + 60);
 
     const tex = new THREE.CanvasTexture(cv);
     const mat = new THREE.SpriteMaterial({
       map: tex, transparent: true, opacity: 0,
       blending: THREE.NormalBlending, depthWrite: false
     });
-    const sprite = new THREE.Sprite(mat);
-    const scale = 2.4;
-    sprite.scale.set(scale * (W+20)/H, scale, 1);
-    sprite.position.set(sx, sy, sz);
-    sprite.userData = { idx, targetOpacity: 0, basePos: new THREE.Vector3(sx,sy,sz) };
-    scene.add(sprite);
-    window._photos[idx].sprite = sprite;
+    const sp = new THREE.Sprite(mat);
+    const sc = 2.8;
+    sp.scale.set(sc * cv.width / H, sc, 1);
+
+    // Vị trí trên mặt cầu
+    const phi   = Math.acos(1 - 2*(idx+0.5)/total);
+    const theta = GOLDEN * idx;
+    const rr    = GLOBE_R + 0.4;
+    sp.position.set(
+      rr * Math.sin(phi) * Math.cos(theta),
+      rr * Math.sin(phi) * Math.sin(theta),
+      rr * Math.cos(phi)
+    );
+    sp.userData = {
+      idx,
+      basePos: sp.position.clone(),
+      phase: Math.random() * Math.PI * 2
+    };
+    scene.add(sp);
+    sprites[idx] = sp;
   };
-  img.onerror = () => {
-    // Placeholder nếu ảnh lỗi
-    const cv = document.createElement('canvas');
-    cv.width = 276; cv.height = 252;
-    const ctx = cv.getContext('2d');
-    ctx.fillStyle = 'rgba(255,200,60,0.1)';
-    ctx.strokeStyle = 'rgba(255,200,60,0.4)';
-    ctx.lineWidth = 1;
-    ctx.fillRect(0,0,276,252); ctx.strokeRect(0,0,276,252);
-    ctx.fillStyle = 'rgba(255,200,80,0.6)';
-    ctx.font = '14px Georgia'; ctx.textAlign='center';
-    ctx.fillText('Ảnh không tải được', 138, 126);
-    const tex = new THREE.CanvasTexture(cv);
-    const mat = new THREE.SpriteMaterial({ map:tex, transparent:true, opacity:0 });
-    const sprite = new THREE.Sprite(mat);
-    sprite.scale.set(2.4,1.8,1);
-    sprite.position.set(sx,sy,sz);
-    sprite.userData = { idx, targetOpacity:0, basePos:new THREE.Vector3(sx,sy,sz) };
-    scene.add(sprite);
-    window._photos[idx].sprite = sprite;
-  };
-  img.src = url;
+
+  img.onload  = () => doCreate(img);
+  img.onerror = () => doCreate(null);
+  img.src = photo.url;
 }
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
-  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h); ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r); ctx.arcTo(x, y, x+r, y, r);
   ctx.closePath();
 }
 
-// Rebuild sprites sau khi cập nhật danh sách
-window.rebuildSprites = function() {
-  // Xóa sprite cũ
-  window._photos.forEach(p => {
-    if (p.sprite) { scene.remove(p.sprite); p.sprite = null; }
-  });
-  window._photos.forEach((p, i) => createPhotoSprite(p.url, i));
-  document.getElementById('photo-count').textContent = window._photos.length;
-  renderPhotoList();
-};
+PHOTOS.forEach((p, i) => buildSprite(p, i, PHOTOS.length));
 
-// ─────────────────────────────────────────
+// dots viewer
+const dotsEl = document.getElementById('dots');
+PHOTOS.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot-ind'; d.id = `dot-${i}`;
+  dotsEl.appendChild(d);
+});
+
+// ─────────────────────────────────────
 // HAND TRACKING
-// ─────────────────────────────────────────
+// ─────────────────────────────────────
 const videoEl = document.getElementById('input_video');
-let rotX=0, rotY=0, zoom=16, isHand=false;
+let rotX = 0, rotY = 0, zoom = ZOOM_DEFAULT, isHand = false;
 
-const handsDetect = new Hands({
+const handsMP = new Hands({
   locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
 });
-handsDetect.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.6 });
-handsDetect.onResults(res => {
+handsMP.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.6 });
+handsMP.onResults(res => {
+  const hudTxt = document.getElementById('hud-txt');
   if (res.multiHandLandmarks?.length > 0) {
-    isHand = true; window._isHand = true;
+    isHand = true;
     const lm = res.multiHandLandmarks[0];
     rotY = (lm[9].x - 0.5) * Math.PI * 1.4;
-    rotX = (lm[9].y - 0.5) * Math.PI * 0.9;
+    rotX = (lm[9].y - 0.5) * Math.PI * 0.85;
     const d = Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y);
     zoom = THREE.MathUtils.clamp(
-      THREE.MathUtils.mapLinear(d, 0.04, 0.28, 18, 5), 5, 18
+      THREE.MathUtils.mapLinear(d, 0.04, 0.26, 18, 4.5), 4.5, 18
     );
-    document.getElementById('hud-text').textContent =
-      zoom < ZOOM_REVEAL ? 'Khám phá ký ức ✦' : 'Nhíu ngón tay để zoom vào';
+    hudTxt.textContent = zoom < ZOOM_REVEAL
+      ? '✦ Chạm để xem ký ức'
+      : 'Nhíu ngón tay để khám phá';
   } else {
-    isHand = false; window._isHand = false;
+    isHand = false;
     rotX *= 0.96; rotY *= 0.96;
-    zoom = THREE.MathUtils.lerp(zoom, 16, 0.035);
-    document.getElementById('hud-text').textContent = 'Đưa tay vào khung hình';
+    zoom = THREE.MathUtils.lerp(zoom, ZOOM_DEFAULT, 0.032);
+    hudTxt.textContent = 'Đưa tay vào khung hình';
   }
-  window._zoomLevel = zoom;
 });
 
-const camStream = new Camera(videoEl, {
-  onFrame: async () => { await handsDetect.send({ image: videoEl }); },
+new Camera(videoEl, {
+  onFrame: async () => await handsMP.send({ image: videoEl }),
   width: 640, height: 480
-});
-camStream.start().then(() => {
-  document.getElementById('status').textContent = 'Camera sẵn sàng';
-  setTimeout(()=>{ document.getElementById('status').style.opacity='0'; }, 3000);
-}).catch(() => {
-  document.getElementById('status').textContent = 'Không có camera — dùng scroll để zoom';
-  document.getElementById('status').style.color = 'rgba(255,160,60,0.7)';
-});
+}).start();
 
-// Scroll fallback (không có tay)
+// scroll fallback
 window.addEventListener('wheel', e => {
-  zoom = THREE.MathUtils.clamp(zoom + e.deltaY * 0.01, 5, 20);
-  window._zoomLevel = zoom;
+  zoom = THREE.MathUtils.clamp(zoom + e.deltaY * 0.012, 4.5, 20);
 }, { passive:true });
 
-// ─────────────────────────────────────────
+// ─────────────────────────────────────
 // RAYCASTER — click ảnh
-// ─────────────────────────────────────────
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-renderer.domElement.addEventListener('click', e => {
-  if (document.getElementById('photo-viewer').classList.contains('open')) return;
-  mouse.x =  (e.clientX / innerWidth)  * 2 - 1;
-  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
+// ─────────────────────────────────────
+const rc = new THREE.Raycaster();
+rc.params.Sprite = { threshold: 0.5 };
+const mouse2 = new THREE.Vector2();
 
-  const sprites = window._photos.map(p=>p.sprite).filter(Boolean);
-  const hits = raycaster.intersectObjects(sprites);
-  if (hits.length > 0 && window._zoomLevel < ZOOM_REVEAL) {
-    const idx = hits[0].object.userData.idx;
-    openViewer(idx);
-  }
+renderer.domElement.addEventListener('click', e => {
+  if (document.getElementById('viewer').classList.contains('open')) return;
+  if (zoom >= ZOOM_REVEAL) return;
+  mouse2.x =  (e.clientX/innerWidth)  * 2 - 1;
+  mouse2.y = -(e.clientY/innerHeight) * 2 + 1;
+  rc.setFromCamera(mouse2, camera);
+  const hits = rc.intersectObjects(sprites.filter(Boolean));
+  if (hits.length) openV(hits[0].object.userData.idx);
 });
 
-// ─────────────────────────────────────────
+// ─────────────────────────────────────
+// VIEWER
+// ─────────────────────────────────────
+let curIdx = 0;
+function openV(idx) {
+  curIdx = idx;
+  const p = PHOTOS[idx];
+  document.getElementById('vimg').src   = p.url;
+  document.getElementById('vname').textContent = p.name || '';
+  document.getElementById('vdate').textContent = p.date || '';
+  document.getElementById('viewer').classList.add('open');
+  dotsEl.style.opacity = '1';
+  document.querySelectorAll('.dot-ind').forEach((d,i) =>
+    d.classList.toggle('active', i===idx)
+  );
+}
+function closeV() {
+  document.getElementById('viewer').classList.remove('open');
+  dotsEl.style.opacity = '0';
+}
+function navV(dir) {
+  openV((curIdx + dir + PHOTOS.length) % PHOTOS.length);
+}
+window.openV = openV; window.closeV = closeV; window.navV = navV;
+
+document.getElementById('viewer').addEventListener('click', function(e){
+  if (e.target === this) closeV();
+});
+
+// ─────────────────────────────────────
 // ANIMATION
-// ─────────────────────────────────────────
-// Simple noise: sin-based pseudo-random oscillation per particle
-function oscillate(i, t, amplitude) {
-  return Math.sin(t * 1.3 + i * 0.00731) * amplitude
-       + Math.cos(t * 0.97 + i * 0.01234) * amplitude * 0.5;
+// ─────────────────────────────────────
+function osc(i, t, amp) {
+  return Math.sin(t*1.1 + i*0.00831) * amp
+       + Math.cos(t*0.73 + i*0.01543) * amp * 0.45;
 }
 
 function animate() {
   requestAnimationFrame(animate);
-  const t = Date.now() * 0.00042;
-  const zoomed = zoom < ZOOM_REVEAL;
-  const revealed = zoom < ZOOM_REVEAL - 1;
+  const t = Date.now() * 0.00040;
+  const revealed = isHand && zoom < ZOOM_REVEAL;
 
-  // ── Cập nhật lõi ──
-  const cp = particlesCore.geometry.attributes.position.array;
-  for (let i = 0; i < coreCount; i++) {
-    const spd  = coreRand[i*4];
-    const off1 = coreRand[i*4+1];
-    const off2 = coreRand[i*4+2];
+  // ─ Lõi ─
+  const cp = pCore.geometry.attributes.position.array;
+  for (let i = 0; i < CORE_COUNT; i++) {
+    const spd=coreRand[i*4], o1=coreRand[i*4+1], o2=coreRand[i*4+2];
     let tx, ty, tz;
-
     if (isHand) {
-      // Hình thành + dao động nhẹ "thở"
-      const breathAmp = 0.08;
-      const osc = oscillate(i, t, breathAmp);
-      tx = coreBase[i*3]   + osc;
-      ty = coreBase[i*3+1] + osc * 0.8;
-      tz = coreBase[i*3+2] + osc;
+      // Hình thành + thở nhẹ
+      const b = osc(i, t, 0.07);
+      tx = coreBase[i*3]   + b;
+      ty = coreBase[i*3+1] + b * 0.75;
+      tz = coreBase[i*3+2] + b;
     } else {
-      // Bay uyển chuyển Lissajous
-      const r = 10 + Math.sin(t*spd*0.4+off2)*3;
-      tx = Math.sin(t*spd     +off1      )*r;
-      ty = Math.cos(t*spd*0.6 +off2      )*r*0.72;
-      tz = Math.sin(t*spd*0.8 +off1+1.2  )*r;
+      // Bay Lissajous mềm mại
+      const r = 10 + Math.sin(t*spd*0.38+o2) * 3.2;
+      tx = Math.sin(t*spd      +o1      ) * r;
+      ty = Math.cos(t*spd*0.58 +o2      ) * r * 0.7;
+      tz = Math.sin(t*spd*0.82 +o1+1.31 ) * r;
     }
-
-    const ls = isHand ? 0.022 : 0.016;
+    const ls = isHand ? 0.020 : 0.015;
     cp[i*3]   += (tx - cp[i*3])   * ls;
     cp[i*3+1] += (ty - cp[i*3+1]) * ls;
     cp[i*3+2] += (tz - cp[i*3+2]) * ls;
   }
-  particlesCore.geometry.attributes.position.needsUpdate = true;
+  pCore.geometry.attributes.position.needsUpdate = true;
 
-  // ── Cập nhật vành đai ──
-  const rp = particlesRing.geometry.attributes.position.array;
-  for (let i = 0; i < ringCount; i++) {
-    const spd  = ringRand[i*3];
-    const off1 = ringRand[i*3+1];
+  // ─ Vành đai ─
+  const rp = pRing.geometry.attributes.position.array;
+  for (let i = 0; i < RING_COUNT; i++) {
+    const spd=ringRand[i*3], o1=ringRand[i*3+1];
     let tx, ty, tz;
-
     if (isHand) {
-      const osc = oscillate(i+50000, t, 0.04);
-      tx = ringBase[i*3]   + osc;
-      ty = ringBase[i*3+1] + osc * 0.3;
-      tz = ringBase[i*3+2] + osc;
+      const b = osc(i+40000, t, 0.035);
+      tx = ringBase[i*3]   + b;
+      ty = ringBase[i*3+1] + b * 0.25;
+      tz = ringBase[i*3+2] + b;
     } else {
-      const r2 = 12 + Math.sin(t*spd*0.3+off1)*4;
-      tx = Math.cos(t*spd*0.5  +off1      )*r2;
-      ty = Math.sin(t*spd*0.35 +off1+0.7  )*r2*0.32;
-      tz = Math.sin(t*spd*0.6  +off1      )*r2;
+      const r2 = 12 + Math.sin(t*spd*0.28+o1) * 3.8;
+      tx = Math.cos(t*spd*0.48 +o1     ) * r2;
+      ty = Math.sin(t*spd*0.33 +o1+0.8 ) * r2 * 0.30;
+      tz = Math.sin(t*spd*0.62 +o1     ) * r2;
     }
-
-    const lr = isHand ? 0.018 : 0.013;
+    const lr = isHand ? 0.016 : 0.012;
     rp[i*3]   += (tx - rp[i*3])   * lr;
     rp[i*3+1] += (ty - rp[i*3+1]) * lr;
     rp[i*3+2] += (tz - rp[i*3+2]) * lr;
   }
-  particlesRing.geometry.attributes.position.needsUpdate = true;
+  pRing.geometry.attributes.position.needsUpdate = true;
 
-  // ── Xoay ──
-  const targetRX = isHand ? rotX : 0;
-  const targetRY = isHand ? rotY : 0;
-  particlesCore.rotation.x = THREE.MathUtils.lerp(particlesCore.rotation.x, targetRX, 0.04);
-  particlesCore.rotation.y = THREE.MathUtils.lerp(particlesCore.rotation.y, targetRY, 0.04);
-  particlesCore.rotation.y += 0.0009;
-  particlesRing.rotation.x = THREE.MathUtils.lerp(particlesRing.rotation.x, targetRX+RING_TILT, 0.04);
-  particlesRing.rotation.y = THREE.MathUtils.lerp(particlesRing.rotation.y, targetRY, 0.04);
-  particlesRing.rotation.y += 0.0006;
+  // ─ Rotation ─
+  const tRX = isHand ? rotX : 0;
+  const tRY = isHand ? rotY : 0;
+  pCore.rotation.x = THREE.MathUtils.lerp(pCore.rotation.x, tRX, 0.04);
+  pCore.rotation.y = THREE.MathUtils.lerp(pCore.rotation.y, tRY, 0.04);
+  pCore.rotation.y += 0.00085;
+  pRing.rotation.x = THREE.MathUtils.lerp(pRing.rotation.x, tRX+RING_TILT, 0.04);
+  pRing.rotation.y = THREE.MathUtils.lerp(pRing.rotation.y, tRY, 0.04);
+  pRing.rotation.y += 0.00055;
 
-  // ── Camera zoom ──
+  // ─ Camera ─
   camera.position.z = THREE.MathUtils.lerp(camera.position.z, zoom, 0.05);
 
-  // ── Sprites ảnh: fade in/out theo zoom ──
-  const targetOp = (isHand && revealed) ? 1 : 0;
-  // Lấp lánh nhẹ: mỗi sprite dao động opacity
-  window._photos.forEach((p, i) => {
-    if (!p.sprite) return;
-    const shimmer = revealed
-      ? 0.85 + Math.sin(t * 1.5 + i * 1.27) * 0.15
-      : 0;
-    const cur = p.sprite.material.opacity;
-    p.sprite.material.opacity = THREE.MathUtils.lerp(cur, shimmer, 0.04);
-    p.sprite.material.needsUpdate = true;
+  // ─ Sprites ─
+  sprites.forEach((sp, i) => {
+    if (!sp) return;
+    // Shimmer opacity — nhấp nháy nhẹ khi hiện
+    const targetOp = revealed ? 0.88 + Math.sin(t*1.2 + sp.userData.phase)*0.12 : 0;
+    sp.material.opacity = THREE.MathUtils.lerp(sp.material.opacity, targetOp, 0.035);
+    sp.material.needsUpdate = true;
 
-    // Sprite xoay về phía camera (billboarding tự động với Sprite)
-    // Dao động vị trí nhẹ quanh bề mặt cầu
-    if (revealed && p.sprite.userData.basePos) {
-      const bp = p.sprite.userData.basePos;
-      const wobble = Math.sin(t * 0.8 + i * 2.1) * 0.06;
-      p.sprite.position.set(
-        bp.x * (1 + wobble),
-        bp.y * (1 + wobble * 0.7),
-        bp.z * (1 + wobble)
-      );
+    // Nhấp nhô nhẹ quanh bề mặt
+    if (revealed && sp.userData.basePos) {
+      const bp = sp.userData.basePos;
+      const w  = Math.sin(t * 0.75 + sp.userData.phase) * 0.055;
+      sp.position.set(bp.x*(1+w), bp.y*(1+w*0.6), bp.z*(1+w));
     }
   });
 
-  // ── Bloom giảm khi zoom vào để ảnh rõ ──
-  bloom.strength = THREE.MathUtils.lerp(bloom.strength, zoomed ? 1.6 : 2.8, 0.04);
+  // ─ Bloom adapt ─
+  bloom.strength = THREE.MathUtils.lerp(
+    bloom.strength,
+    zoom < ZOOM_REVEAL ? 1.4 : 3.0,
+    0.04
+  );
+
+  // ─ Intro fade ─
+  if (isHand) {
+    const intro = document.getElementById('intro');
+    if (intro.style.opacity !== '0') intro.style.opacity = '0';
+  }
 
   composer.render();
 }
 animate();
 
-// ─────────────────────────────────────────
-// RESIZE
-// ─────────────────────────────────────────
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
+  bloom.resolution.set(innerWidth, innerHeight);
 });
-
-// ─────────────────────────────────────────
-// EXPOSE buildCore cho admin
-// ─────────────────────────────────────────
-window._buildCore = buildCore;
-window._rebuildSprites = window.rebuildSprites;
 </script>
-
-<!-- ─────────────────────────────────────────
-     UI / ADMIN LOGIC (plain JS)
-───────────────────────────────────────── -->
-
-<script>
-// ── Local storage ──
-function saveToLocal() {
-  localStorage.setItem('mp_photos', JSON.stringify(window._photos.map(p=>({
-    url:p.url, name:p.name, date:p.date
-  }))));
-}
-function loadFromLocal() {
-  try {
-    const d = JSON.parse(localStorage.getItem('mp_photos') || '[]');
-    window._photos = d;
-    window.rebuildSprites();
-  } catch(e) {}
-}
-
-// ── Firebase (optional) ──
-let fbConfig = JSON.parse(localStorage.getItem('mp_firebase') || 'null');
-function saveFirebaseConfig() {
-  fbConfig = {
-    url: document.getElementById('fb-url').value.trim(),
-    key: document.getElementById('fb-key').value.trim()
-  };
-  localStorage.setItem('mp_firebase', JSON.stringify(fbConfig));
-  alert('✓ Đã lưu Firebase config');
-}
-
-async function loadFromFirebase() {
-  if (!fbConfig?.url) return;
-  try {
-    const res = await fetch(`${fbConfig.url}/photos.json?auth=${fbConfig.key}`);
-    const data = await res.json();
-    if (data && typeof data === 'object') {
-      window._photos = Object.values(data);
-      window.rebuildSprites();
-      saveToLocal();
-    }
-  } catch(e) { console.warn('Firebase load fail', e); }
-}
-
-async function saveToFirebase(photos) {
-  if (!fbConfig?.url) return;
-  try {
-    const obj = {};
-    photos.forEach((p,i) => obj[`p${i}`] = {url:p.url,name:p.name,date:p.date});
-    await fetch(`${fbConfig.url}/photos.json`, {
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(obj)
-    });
-  } catch(e) { console.warn('Firebase save fail', e); }
-}
-
-// ── Admin UI ──
-function toggleAdmin() {
-  document.getElementById('admin-panel').classList.toggle('open');
-}
-function updateDensityLabel(v) {
-  document.getElementById('density-label').textContent = `${parseInt(v).toLocaleString()} hạt`;
-}
-function applySettings() {
-  const v = parseInt(document.getElementById('density-val').value);
-  window._buildCore(v);
-}
-function resetAll() {
-  if (!confirm('Xóa toàn bộ ảnh và cài đặt?')) return;
-  window._photos.forEach(p => { if(p.sprite) p.sprite.visible=false; });
-  window._photos = [];
-  localStorage.removeItem('mp_photos');
-  renderPhotoList();
-  document.getElementById('photo-count').textContent = '0';
-}
-
-function addPhoto() {
-  const url  = document.getElementById('photo-url').value.trim();
-  const name = document.getElementById('photo-name').value.trim();
-  const date = document.getElementById('photo-date').value.trim();
-  if (!url) return alert('Vui lòng nhập URL ảnh');
-  if (window._photos.length >= 15) return alert('Tối đa 15 ảnh');
-
-  const idx = window._photos.length;
-  window._photos.push({ url, name, date, sprite:null });
-  createPhotoSprite(url, idx);
-  saveToLocal();
-  if (fbConfig?.url) saveToFirebase(window._photos);
-  document.getElementById('photo-url').value  = '';
-  document.getElementById('photo-name').value = '';
-  document.getElementById('photo-date').value = '';
-  document.getElementById('photo-count').textContent = window._photos.length;
-  renderPhotoList();
-}
-
-function deletePhoto(idx) {
-  const p = window._photos[idx];
-  if (p?.sprite) p.sprite.visible = false;
-  window._photos.splice(idx, 1);
-  saveToLocal();
-  if (fbConfig?.url) saveToFirebase(window._photos);
-  window.rebuildSprites();
-}
-
-function renderPhotoList() {
-  const list = document.getElementById('photo-list');
-  list.innerHTML = '';
-  window._photos.forEach((p, i) => {
-    const div = document.createElement('div');
-    div.className = 'admin-photo-item';
-    div.innerHTML = `
-      <img src="${p.url}" onerror="this.src='data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"44\\" height=\\"44\\"><rect width=\\"44\\" height=\\"44\\" fill=\\"%23222\\"/></svg>'">
-      <div class="info">
-        <p>${p.name || '(Chưa đặt tên)'}</p>
-        <span>${p.date || ''}</span>
-      </div>
-      <button class="del" onclick="deletePhoto(${i})">×</button>
-    `;
-    list.appendChild(div);
-  });
-}
-
-// ── Viewer ──
-window.openViewer = function(idx) {
-  window._currentViewerIdx = idx;
-  const p = window._photos[idx];
-  if (!p) return;
-  document.getElementById('viewer-img').src  = p.url;
-  document.getElementById('viewer-name').textContent = p.name || '';
-  document.getElementById('viewer-date').textContent = p.date || '';
-  document.getElementById('photo-viewer').classList.add('open');
-};
-window.closeViewer = function() {
-  document.getElementById('photo-viewer').classList.remove('open');
-};
-window.navigateViewer = function(dir) {
-  const n = window._photos.length;
-  if (!n) return;
-  window._currentViewerIdx = (window._currentViewerIdx + dir + n) % n;
-  window.openViewer(window._currentViewerIdx);
-};
-document.getElementById('photo-viewer').addEventListener('click', function(e) {
-  if (e.target === this) window.closeViewer();
-});
-
-// ── Prefill Firebase config ──
-if (fbConfig) {
-  document.getElementById('fb-url').value = fbConfig.url || '';
-  document.getElementById('fb-key').value = fbConfig.key || '';
-}
-
-// ── Load data ──
-loadFromFirebase().catch(()=>{}).finally(() => {
-  if (!window._photos.length) loadFromLocal();
-});
-
-// ── Zoom hint ──
-setInterval(() => {
-  const hint = document.getElementById('zoom-hint');
-  if (!window._isHand && window._photos.length > 0) {
-    hint.style.opacity = '1';
-    setTimeout(()=>{ hint.style.opacity='0'; }, 2000);
-  }
-}, 8000);
-</script>
-
 </body>
 </html>

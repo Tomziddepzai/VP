@@ -6,222 +6,83 @@
 <title>✦ Ký ức của chúng mình ✦</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#000; overflow:hidden; cursor:none; }
+body { background:#000; overflow:hidden; }
 canvas { display:block; }
 video  { display:none; }
 
-/* ── CURSOR ── */
-#cursor {
-  position:fixed; width:8px; height:8px;
-  border-radius:50%; pointer-events:none; z-index:9999;
-  background:rgba(255,220,100,0.9);
-  transform:translate(-50%,-50%);
-  box-shadow:0 0 12px rgba(255,200,60,0.8);
-  transition:width .2s,height .2s;
-}
-
-/* ── INTRO TEXT ── */
 #intro {
   position:fixed; inset:0; z-index:50;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   pointer-events:none;
-  transition:opacity 1.5s;
 }
 #intro h1 {
-  font-family:'Georgia',serif;
-  font-size:clamp(22px,4vw,38px);
-  font-weight:normal; letter-spacing:6px;
+  font-family:'Georgia',serif; font-weight:normal;
+  font-size:clamp(20px,3.5vw,34px); letter-spacing:6px;
   color:rgba(255,235,160,0);
-  animation:fadeTitle 3s ease-out 0.5s forwards;
+  animation:fadeIn 3s ease-out 0.8s forwards;
 }
 #intro p {
-  margin-top:16px;
-  font-family:'Georgia',serif;
-  font-size:clamp(11px,1.8vw,14px);
-  letter-spacing:4px; text-transform:uppercase;
-  color:rgba(255,200,80,0);
-  animation:fadeTitle 3s ease-out 1.4s forwards;
+  margin-top:14px; font-family:'Georgia',serif;
+  font-size:clamp(10px,1.6vw,13px); letter-spacing:4px;
+  text-transform:uppercase; color:rgba(255,200,80,0);
+  animation:fadeIn 3s ease-out 1.8s forwards;
 }
-@keyframes fadeTitle {
-  to { color:rgba(255,235,160,0.7); }
-}
+@keyframes fadeIn { to { color:rgba(255,235,160,0.65); } }
 
-/* ── HUD ── */
 #hud {
-  position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+  position:fixed; bottom:26px; left:50%; transform:translateX(-50%);
   z-index:100; pointer-events:none;
-  display:flex; align-items:center; gap:10px;
-  background:rgba(255,255,255,0.03);
-  border:0.5px solid rgba(255,220,80,0.2);
-  border-radius:40px; padding:8px 22px;
-  backdrop-filter:blur(6px);
-  opacity:0; animation:fadeHud 1s ease-out 4s forwards;
+  display:flex; align-items:center; gap:9px;
+  border:0.5px solid rgba(255,220,80,0.18);
+  border-radius:40px; padding:7px 20px;
+  opacity:0; animation:fadeHud 1s ease-out 4.5s forwards;
 }
 @keyframes fadeHud { to { opacity:1; } }
 #hud .dot {
   width:5px; height:5px; border-radius:50%;
-  background:rgba(255,200,60,0.5);
-  animation:blink 2.5s ease-in-out infinite;
+  background:rgba(255,200,60,0.45);
+  animation:blink 2.8s ease-in-out infinite;
 }
-@keyframes blink { 0%,100%{opacity:.2} 50%{opacity:1} }
+@keyframes blink { 0%,100%{opacity:.15} 50%{opacity:.9} }
 #hud span {
-  font-family:'Georgia',serif;
-  font-size:11px; letter-spacing:3px;
-  color:rgba(255,210,100,0.55);
+  font-family:'Georgia',serif; font-size:11px;
+  letter-spacing:3px; color:rgba(255,210,100,0.45);
 }
-
-/* ── PHOTO VIEWER ── */
-#viewer {
-  position:fixed; inset:0; z-index:200;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0);
-  opacity:0; pointer-events:none;
-  transition:opacity .5s, background .5s;
-}
-#viewer.open {
-  opacity:1; pointer-events:all;
-  background:rgba(0,0,0,0.9);
-}
-#viewer .card {
-  position:relative; max-width:480px; width:88%;
-  transform:scale(.92) translateY(12px);
-  transition:transform .5s cubic-bezier(.16,1,.3,1);
-}
-#viewer.open .card { transform:scale(1) translateY(0); }
-
-#viewer img {
-  width:100%; border-radius:14px;
-  border:1px solid rgba(255,210,80,0.3);
-  display:block;
-}
-/* Polaroid glow */
-#viewer .card::before {
-  content:'';
-  position:absolute; inset:-1px;
-  border-radius:15px;
-  background:linear-gradient(135deg,rgba(255,210,80,.15),rgba(255,150,60,.05),rgba(255,210,80,.1));
-  pointer-events:none;
-}
-#viewer .caption {
-  text-align:center; margin-top:18px; padding:0 8px;
-}
-#viewer .caption h3 {
-  font-family:'Georgia',serif; font-weight:normal;
-  font-size:clamp(16px,3vw,22px);
-  color:rgba(255,240,195,0.95); letter-spacing:2px;
-  line-height:1.4;
-}
-#viewer .caption p {
-  margin-top:6px;
-  font-family:'Georgia',serif; font-size:12px;
-  letter-spacing:3px; text-transform:uppercase;
-  color:rgba(255,200,80,0.45);
-}
-/* nav */
-.nav {
-  position:absolute; top:50%; transform:translateY(-50%);
-  width:38px; height:38px; border-radius:50%;
-  background:rgba(255,255,255,0.06);
-  border:0.5px solid rgba(255,210,80,0.25);
-  color:rgba(255,220,100,.8); font-size:20px;
-  cursor:pointer; display:flex; align-items:center;
-  justify-content:center; transition:.2s;
-}
-.nav:hover { background:rgba(255,210,80,.14); }
-.nav-l { left:-52px; }
-.nav-r { right:-52px; }
-.close-v {
-  position:absolute; top:-14px; right:-14px;
-  width:32px; height:32px; border-radius:50%;
-  background:rgba(30,20,10,.9);
-  border:0.5px solid rgba(255,210,80,.3);
-  color:rgba(255,220,100,.7); font-size:17px;
-  cursor:pointer; display:flex; align-items:center;
-  justify-content:center; transition:.2s;
-}
-.close-v:hover { color:rgba(255,220,100,1); }
-
-/* progress dots */
-#dots {
-  position:fixed; bottom:72px; left:50%; transform:translateX(-50%);
-  display:flex; gap:6px; z-index:201; pointer-events:none;
-  opacity:0; transition:opacity .4s;
-}
-#viewer.open + #dots { opacity:1; }
-.dot-ind {
-  width:5px; height:5px; border-radius:50%;
-  background:rgba(255,200,80,.25); transition:.3s;
-}
-.dot-ind.active { background:rgba(255,200,80,.85); transform:scale(1.3); }
 </style>
 </head>
 <body>
 
-<div id="cursor"></div>
 <video id="input_video" playsinline></video>
 
-<!-- intro -->
 <div id="intro">
   <h1>✦ Ký ức của chúng mình ✦</h1>
-  <p>Đưa tay vào · Nhíu ngón để khám phá</p>
+  <p>Đưa tay · Nhíu ngón để khám phá</p>
 </div>
 
-<!-- hud -->
 <div id="hud">
   <div class="dot"></div>
   <span id="hud-txt">Đưa tay vào khung hình</span>
 </div>
 
-<!-- viewer -->
-<div id="viewer">
-  <div class="card">
-    <button class="close-v" onclick="closeV()">×</button>
-    <button class="nav nav-l" onclick="navV(-1)">‹</button>
-    <button class="nav nav-r" onclick="navV(1)">›</button>
-    <img id="vimg" src="" alt="">
-    <div class="caption">
-      <h3 id="vname"></h3>
-      <p id="vdate"></p>
-    </div>
-  </div>
-</div>
-<div id="dots"></div>
-
-<!-- cursor track -->
-<script>
-const cur = document.getElementById('cursor');
-document.addEventListener('mousemove', e => {
-  cur.style.left = e.clientX+'px';
-  cur.style.top  = e.clientY+'px';
-});
-</script>
-
-<!-- ══════════════════════════════════════════
-     ✦  THÊM / SỬA ẢNH Ở ĐÂY
-     Điền url, name, date cho mỗi ảnh
+<!-- ══════════════════════════════
+     ✦  THÊM ẢNH Ở ĐÂY
+     Dán URL ImgBB vào url
      Tối đa 15 ảnh
-════════════════════════════════════════════ -->
+════════════════════════════════ -->
 <script>
 const PHOTOS = [
-  // { url: 'https://...', name: 'Lần đầu gặp nhau', date: '14.02.2022' },
-  // { url: 'https://...', name: 'Cà phê sáng hôm ấy', date: '20.03.2022' },
-  // { url: 'https://...', name: 'Sinh nhật em', date: '05.07.2022' },
-  // ...
-
-  // === PLACEHOLDER (xóa đi khi có ảnh thật) ===
-  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau', date:'14.02.2022' },
-  { url:'https://picsum.photos/seed/b2/600/450', name:'Cà phê sáng hôm ấy', date:'20.03.2022' },
-  { url:'https://picsum.photos/seed/c3/600/450', name:'Sinh nhật em', date:'05.07.2022' },
-  { url:'https://picsum.photos/seed/d4/600/450', name:'Chuyến đi Đà Lạt', date:'10.09.2022' },
-  { url:'https://picsum.photos/seed/e5/600/450', name:'Mưa hôm ấy', date:'03.11.2022' },
-  { url:'https://picsum.photos/seed/f6/600/450', name:'Giáng sinh đầu tiên', date:'25.12.2022' },
-  { url:'https://picsum.photos/seed/g7/600/450', name:'Tết bên nhau', date:'22.01.2023' },
-  { url:'https://picsum.photos/seed/h8/600/450', name:'Buổi chiều ở biển', date:'15.04.2023' },
+  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau',     date:'14.02.2022' },
+  { url:'https://picsum.photos/seed/b2/600/450', name:'Cà phê sáng hôm ấy',   date:'20.03.2022' },
+  { url:'https://picsum.photos/seed/c3/600/450', name:'Sinh nhật em',           date:'05.07.2022' },
+  { url:'https://picsum.photos/seed/d4/600/450', name:'Chuyến đi Đà Lạt',      date:'10.09.2022' },
+  { url:'https://picsum.photos/seed/e5/600/450', name:'Mưa hôm ấy',             date:'03.11.2022' },
+  { url:'https://picsum.photos/seed/f6/600/450', name:'Giáng sinh đầu tiên',    date:'25.12.2022' },
+  { url:'https://picsum.photos/seed/g7/600/450', name:'Tết bên nhau',            date:'22.01.2023' },
+  { url:'https://picsum.photos/seed/h8/600/450', name:'Buổi chiều ở biển',      date:'15.04.2023' },
 ];
 </script>
 
-<!-- THREE.JS -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script type="importmap">
@@ -235,30 +96,29 @@ const PHOTOS = [
 
 <script type="module">
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
+import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-// ─────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────
-const GLOBE_R      = 4.8;
-const CORE_COUNT   = 20000;   // đủ đẹp, không quá nặng
-const RING_COUNT   = 9000;
-const RING_TILT    = 0.24;    // ~14° nghiêng
-const ZOOM_REVEAL  = 9.2;     // zoom vào dưới đây → hiện ảnh
-const ZOOM_MIN     = 5.0;
-const ZOOM_MAX     = 18.0;
-const ZOOM_DEFAULT = 15.5;
+// ─────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────
+const GLOBE_R     = 4.8;
+const CORE_COUNT  = 20000;
+const RING_COUNT  = 9000;
+const RING_TILT   = 0.24;
+const ZOOM_REVEAL = 9.5;   // dưới mức này ảnh bắt đầu hiện
+const ZOOM_SHOW   = 7.5;   // dưới mức này ảnh hiện rõ hoàn toàn
+const ZOOM_DEF    = 15.5;
 
-// ─────────────────────────────────────
-// SCENE
-// ─────────────────────────────────────
+// ─────────────────────────────────────────
+// SCENE SETUP
+// ─────────────────────────────────────────
 const scene  = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 1000);
-camera.position.z = ZOOM_DEFAULT;
+camera.position.z = ZOOM_DEF;
 
-const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference:'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
@@ -267,394 +127,348 @@ const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(
   new THREE.Vector2(innerWidth, innerHeight),
-  3.0, 0.55, 0.05
+  2.8,   // strength
+  0.5,   // radius
+  0.06   // threshold
 );
 composer.addPass(bloom);
 
-// ─────────────────────────────────────
-// TEXTURES
-// ─────────────────────────────────────
+// ─────────────────────────────────────────
+// PARTICLE TEXTURE
+// ─────────────────────────────────────────
 function glowTex(size, r, g, b) {
   const cv = document.createElement('canvas');
   cv.width = cv.height = size;
   const ctx = cv.getContext('2d');
   const grd = ctx.createRadialGradient(size/2,size/2,0, size/2,size/2,size/2);
   grd.addColorStop(0,    `rgba(${r},${g},${b},1)`);
-  grd.addColorStop(0.12, `rgba(${r},${g},${b},0.95)`);
-  grd.addColorStop(0.38, `rgba(${r},${g},${b},0.45)`);
-  grd.addColorStop(0.65, `rgba(${r},${g},${b},0.1)`);
+  grd.addColorStop(0.12, `rgba(${r},${g},${b},0.9)`);
+  grd.addColorStop(0.4,  `rgba(${r},${g},${b},0.35)`);
+  grd.addColorStop(0.7,  `rgba(${r},${g},${b},0.08)`);
   grd.addColorStop(1,    'rgba(0,0,0,0)');
-  ctx.fillStyle = grd; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, size, size);
   return new THREE.CanvasTexture(cv);
 }
-const texCore = glowTex(64, 255, 248, 210);  // vàng ngà ấm
-const texRing = glowTex(32, 215, 228, 255);  // xanh lạnh bạch kim
+const texCore = glowTex(64, 255, 245, 205);
+const texRing = glowTex(32, 210, 225, 255);
 
-// ─────────────────────────────────────
-// PARTICLES — LÕI
-// ─────────────────────────────────────
-const geoCore   = new THREE.BufferGeometry();
-const corePosA  = new Float32Array(CORE_COUNT * 3);
-const coreBase  = new Float32Array(CORE_COUNT * 3);
-const coreRand  = new Float32Array(CORE_COUNT * 4);
+// ─────────────────────────────────────────
+// CORE PARTICLES
+// ─────────────────────────────────────────
+const geoCore  = new THREE.BufferGeometry();
+const corePos  = new Float32Array(CORE_COUNT * 3);
+const coreBase = new Float32Array(CORE_COUNT * 3);
+const coreRnd  = new Float32Array(CORE_COUNT * 4);
 
 for (let i = 0; i < CORE_COUNT; i++) {
-  // Phân bố Fibonacci sphere
-  const phi   = Math.acos(-1 + (2*i) / CORE_COUNT);
+  const phi   = Math.acos(-1 + (2*i)/CORE_COUNT);
   const theta = Math.sqrt(CORE_COUNT * Math.PI) * phi;
-  const r     = GLOBE_R + Math.random() * 0.65;
-  coreBase[i*3]   = r * Math.sin(phi) * Math.cos(theta);
-  coreBase[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+  const r     = GLOBE_R + Math.random() * 0.6;
+  coreBase[i*3]   = r * Math.sin(phi)*Math.cos(theta);
+  coreBase[i*3+1] = r * Math.sin(phi)*Math.sin(theta);
   coreBase[i*3+2] = r * Math.cos(phi);
 
-  // Vị trí bay ban đầu — dòng chảy mềm
-  corePosA[i*3]   = (Math.random()-.5) * 22;
-  corePosA[i*3+1] = (Math.random()-.5) * 22;
-  corePosA[i*3+2] = (Math.random()-.5) * 22;
+  corePos[i*3]   = (Math.random()-.5)*22;
+  corePos[i*3+1] = (Math.random()-.5)*22;
+  corePos[i*3+2] = (Math.random()-.5)*22;
 
-  coreRand[i*4]   = Math.random() * 0.26 + 0.07;   // speed
-  coreRand[i*4+1] = Math.random() * Math.PI * 2;    // phase1
-  coreRand[i*4+2] = Math.random() * Math.PI * 2;    // phase2
-  coreRand[i*4+3] = Math.random();                  // misc
+  coreRnd[i*4]   = Math.random()*0.25+0.07;
+  coreRnd[i*4+1] = Math.random()*Math.PI*2;
+  coreRnd[i*4+2] = Math.random()*Math.PI*2;
+  coreRnd[i*4+3] = Math.random();
 }
-geoCore.setAttribute('position', new THREE.BufferAttribute(corePosA, 3));
-
-const matCore = new THREE.PointsMaterial({
-  size: 0.14, map: texCore, transparent: true,
-  blending: THREE.AdditiveBlending, depthWrite: false,
-  color: 0xfff8d0
-});
-const pCore = new THREE.Points(geoCore, matCore);
+geoCore.setAttribute('position', new THREE.BufferAttribute(corePos, 3));
+const pCore = new THREE.Points(geoCore, new THREE.PointsMaterial({
+  size:0.14, map:texCore, transparent:true,
+  blending:THREE.AdditiveBlending, depthWrite:false, color:0xfff5cc
+}));
 scene.add(pCore);
 
-// ─────────────────────────────────────
-// PARTICLES — VÀNH ĐAI
-// ─────────────────────────────────────
+// ─────────────────────────────────────────
+// RING PARTICLES
+// ─────────────────────────────────────────
 const geoRing  = new THREE.BufferGeometry();
-const ringPosA = new Float32Array(RING_COUNT * 3);
+const ringPos  = new Float32Array(RING_COUNT * 3);
 const ringBase = new Float32Array(RING_COUNT * 3);
-const ringRand = new Float32Array(RING_COUNT * 3);
+const ringRnd  = new Float32Array(RING_COUNT * 3);
 
 for (let i = 0; i < RING_COUNT; i++) {
-  const angle = Math.random() * Math.PI * 2;
+  const angle = Math.random()*Math.PI*2;
   const u = Math.random();
-  // r² distribution → dày trong, mỏng ngoài
-  const r = 6.8 + u * u * 5.2;
-
-  const px = Math.cos(angle) * r;
-  const pz = Math.sin(angle) * r;
-  const py = (Math.random()-.5) * 0.07; // gần phẳng
-
-  // Tilt quanh X
+  const r = 6.8 + u*u*5.2;
+  const px = Math.cos(angle)*r;
+  const pz = Math.sin(angle)*r;
+  const py = (Math.random()-.5)*0.07;
   ringBase[i*3]   = px;
-  ringBase[i*3+1] = py - pz * Math.sin(RING_TILT) * 0.14;
-  ringBase[i*3+2] = pz * Math.cos(RING_TILT * 0.14);
+  ringBase[i*3+1] = py - pz*Math.sin(RING_TILT)*0.14;
+  ringBase[i*3+2] = pz*Math.cos(RING_TILT*0.14);
 
-  ringPosA[i*3]   = (Math.random()-.5) * 24;
-  ringPosA[i*3+1] = (Math.random()-.5) * 10;
-  ringPosA[i*3+2] = (Math.random()-.5) * 24;
-
-  ringRand[i*3]   = Math.random() * 0.18 + 0.04;
-  ringRand[i*3+1] = Math.random() * Math.PI * 2;
-  ringRand[i*3+2] = Math.random();
+  ringPos[i*3]   = (Math.random()-.5)*24;
+  ringPos[i*3+1] = (Math.random()-.5)*10;
+  ringPos[i*3+2] = (Math.random()-.5)*24;
+  ringRnd[i*3]   = Math.random()*0.17+0.04;
+  ringRnd[i*3+1] = Math.random()*Math.PI*2;
+  ringRnd[i*3+2] = Math.random();
 }
-geoRing.setAttribute('position', new THREE.BufferAttribute(ringPosA, 3));
-const matRing = new THREE.PointsMaterial({
-  size: 0.08, map: texRing, transparent: true,
-  blending: THREE.AdditiveBlending, depthWrite: false,
-  color: 0xe0eaff
-});
-const pRing = new THREE.Points(geoRing, matRing);
+geoRing.setAttribute('position', new THREE.BufferAttribute(ringPos, 3));
+const pRing = new THREE.Points(geoRing, new THREE.PointsMaterial({
+  size:0.08, map:texRing, transparent:true,
+  blending:THREE.AdditiveBlending, depthWrite:false, color:0xddeeff
+}));
 scene.add(pRing);
 
-// ─────────────────────────────────────
-// PHOTO SPRITES
-// ─────────────────────────────────────
-const sprites = [];
-const GOLDEN  = Math.PI * (3 - Math.sqrt(5)); // golden angle
+// ─────────────────────────────────────────
+// PHOTO CARDS — dán lên Group, xoay cùng địa cầu
+// ─────────────────────────────────────────
+// Group này xoay cùng pCore để ảnh "dính" trên cầu
+const photoGroup = new THREE.Group();
+scene.add(photoGroup);
 
-function buildSprite(photo, idx, total) {
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-
-  const doCreate = (src) => {
-    const W = 300, H = 224;
-    const cv = document.createElement('canvas');
-    cv.width = W + 24; cv.height = H + 72;
-    const ctx = cv.getContext('2d');
-
-    // Nền polaroid tối mờ
-    ctx.fillStyle = 'rgba(8,5,2,0.82)';
-    roundRect(ctx, 0, 0, cv.width, cv.height, 12);
-    ctx.fill();
-
-    // Viền vàng mỏng
-    ctx.strokeStyle = 'rgba(255,210,80,0.55)';
-    ctx.lineWidth = 1;
-    roundRect(ctx, 0, 0, cv.width, cv.height, 12);
-    ctx.stroke();
-
-    // Ảnh
-    if (src) {
-      ctx.save();
-      roundRect(ctx, 12, 12, W, H, 8);
-      ctx.clip();
-      ctx.drawImage(src, 12, 12, W, H);
-      ctx.restore();
-    }
-
-    // Tên
-    ctx.fillStyle = 'rgba(255,238,185,0.95)';
-    ctx.font = `normal ${18}px Georgia`;
-    ctx.textAlign = 'center';
-    ctx.fillText(photo.name || '', cv.width/2, H + 38);
-
-    // Ngày
-    ctx.fillStyle = 'rgba(255,190,70,0.45)';
-    ctx.font = `13px Georgia`;
-    ctx.fillText(photo.date || '', cv.width/2, H + 60);
-
-    const tex = new THREE.CanvasTexture(cv);
-    const mat = new THREE.SpriteMaterial({
-      map: tex, transparent: true, opacity: 0,
-      blending: THREE.NormalBlending, depthWrite: false
-    });
-    const sp = new THREE.Sprite(mat);
-    const sc = 2.8;
-    sp.scale.set(sc * cv.width / H, sc, 1);
-
-    // Vị trí trên mặt cầu
-    const phi   = Math.acos(1 - 2*(idx+0.5)/total);
-    const theta = GOLDEN * idx;
-    const rr    = GLOBE_R + 0.4;
-    sp.position.set(
-      rr * Math.sin(phi) * Math.cos(theta),
-      rr * Math.sin(phi) * Math.sin(theta),
-      rr * Math.cos(phi)
-    );
-    sp.userData = {
-      idx,
-      basePos: sp.position.clone(),
-      phase: Math.random() * Math.PI * 2
-    };
-    scene.add(sp);
-    sprites[idx] = sp;
-  };
-
-  img.onload  = () => doCreate(img);
-  img.onerror = () => doCreate(null);
-  img.src = photo.url;
-}
+const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
-  ctx.moveTo(x+r, y);
-  ctx.lineTo(x+w-r, y); ctx.arcTo(x+w, y, x+w, y+r, r);
-  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
-  ctx.lineTo(x+r, y+h); ctx.arcTo(x, y+h, x, y+h-r, r);
-  ctx.lineTo(x, y+r); ctx.arcTo(x, y, x+r, y, r);
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
   ctx.closePath();
 }
 
-PHOTOS.forEach((p, i) => buildSprite(p, i, PHOTOS.length));
+function makeCard(photo, idx, total) {
+  const W=300, H=225, PAD=14, FOOT=68;
+  const cw = W+PAD*2, ch = H+PAD+FOOT;
+  const cv = document.createElement('canvas');
+  cv.width = cw; cv.height = ch;
+  const ctx = cv.getContext('2d');
 
-// dots viewer
-const dotsEl = document.getElementById('dots');
-PHOTOS.forEach((_, i) => {
-  const d = document.createElement('div');
-  d.className = 'dot-ind'; d.id = `dot-${i}`;
-  dotsEl.appendChild(d);
-});
+  // Nền card
+  ctx.fillStyle = 'rgba(6,4,1,0.78)';
+  roundRect(ctx,0,0,cw,ch,12); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,205,70,0.45)';
+  ctx.lineWidth = 1;
+  roundRect(ctx,0,0,cw,ch,12); ctx.stroke();
 
-// ─────────────────────────────────────
+  // Placeholder màu nếu chưa load ảnh
+  ctx.fillStyle = 'rgba(40,30,10,0.5)';
+  roundRect(ctx,PAD,PAD,W,H,7); ctx.fill();
+
+  // Tên
+  ctx.fillStyle = 'rgba(255,235,175,0.92)';
+  ctx.font = '17px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText(photo.name||'', cw/2, H+PAD+30);
+
+  // Ngày
+  ctx.fillStyle = 'rgba(255,185,60,0.42)';
+  ctx.font = '12px Georgia';
+  ctx.fillText(photo.date||'', cw/2, H+PAD+52);
+
+  const tex = new THREE.CanvasTexture(cv);
+
+  // Tạo sprite dùng tex placeholder trước
+  const mat = new THREE.SpriteMaterial({
+    map: tex, transparent: true, opacity: 0,
+    blending: THREE.NormalBlending, depthWrite: false,
+    sizeAttenuation: true
+  });
+  const sp = new THREE.Sprite(mat);
+  const sc = 3.0;
+  sp.scale.set(sc * cw/H, sc, 1);
+
+  // Vị trí cố định trên mặt cầu
+  const phi_s   = Math.acos(1 - 2*(idx+0.5)/total);
+  const theta_s = GOLDEN * idx;
+  const rr      = GLOBE_R + 0.5;
+  sp.position.set(
+    rr * Math.sin(phi_s)*Math.cos(theta_s),
+    rr * Math.sin(phi_s)*Math.sin(theta_s),
+    rr * Math.cos(phi_s)
+  );
+  sp.userData = { phase: Math.random()*Math.PI*2 };
+  photoGroup.add(sp);
+
+  // Load ảnh thật, vẽ lại canvas
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    ctx.save();
+    roundRect(ctx, PAD, PAD, W, H, 7);
+    ctx.clip();
+    ctx.drawImage(img, PAD, PAD, W, H);
+    ctx.restore();
+    // Vẽ lại text lên trên ảnh (vì bị clip đè)
+    ctx.fillStyle = 'rgba(255,235,175,0.92)';
+    ctx.font = '17px Georgia';
+    ctx.textAlign = 'center';
+    ctx.fillText(photo.name||'', cw/2, H+PAD+30);
+    ctx.fillStyle = 'rgba(255,185,60,0.42)';
+    ctx.font = '12px Georgia';
+    ctx.fillText(photo.date||'', cw/2, H+PAD+52);
+    tex.needsUpdate = true;
+  };
+  img.onerror = () => {}; // giữ placeholder
+  img.src = photo.url;
+
+  return sp;
+}
+
+const sprites = PHOTOS.map((p,i) => makeCard(p, i, PHOTOS.length));
+
+// ─────────────────────────────────────────
 // HAND TRACKING
-// ─────────────────────────────────────
+// ─────────────────────────────────────────
 const videoEl = document.getElementById('input_video');
-let rotX = 0, rotY = 0, zoom = ZOOM_DEFAULT, isHand = false;
+let rotX=0, rotY=0, zoom=ZOOM_DEF, isHand=false;
 
-const handsMP = new Hands({
-  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
-});
+const handsMP = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
 handsMP.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.6 });
 handsMP.onResults(res => {
-  const hudTxt = document.getElementById('hud-txt');
+  const txt = document.getElementById('hud-txt');
   if (res.multiHandLandmarks?.length > 0) {
     isHand = true;
     const lm = res.multiHandLandmarks[0];
     rotY = (lm[9].x - 0.5) * Math.PI * 1.4;
     rotX = (lm[9].y - 0.5) * Math.PI * 0.85;
     const d = Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y);
+    // Zoom tối đa 7.0 — đủ thấy ảnh, không bị quá sâu
     zoom = THREE.MathUtils.clamp(
-      THREE.MathUtils.mapLinear(d, 0.04, 0.26, 18, 4.5), 4.5, 18
+      THREE.MathUtils.mapLinear(d, 0.05, 0.26, 17, 7.0), 7.0, 17
     );
-    hudTxt.textContent = zoom < ZOOM_REVEAL
-      ? '✦ Chạm để xem ký ức'
-      : 'Nhíu ngón tay để khám phá';
+    txt.textContent = zoom < ZOOM_REVEAL ? '✦ Xoay tay để khám phá' : 'Nhíu ngón tay để zoom vào';
   } else {
     isHand = false;
     rotX *= 0.96; rotY *= 0.96;
-    zoom = THREE.MathUtils.lerp(zoom, ZOOM_DEFAULT, 0.032);
-    hudTxt.textContent = 'Đưa tay vào khung hình';
+    zoom = THREE.MathUtils.lerp(zoom, ZOOM_DEF, 0.03);
+    txt.textContent = 'Đưa tay vào khung hình';
   }
 });
 
 new Camera(videoEl, {
   onFrame: async () => await handsMP.send({ image: videoEl }),
-  width: 640, height: 480
+  width:640, height:480
 }).start();
 
 // scroll fallback
 window.addEventListener('wheel', e => {
-  zoom = THREE.MathUtils.clamp(zoom + e.deltaY * 0.012, 4.5, 20);
+  zoom = THREE.MathUtils.clamp(zoom + e.deltaY * 0.012, 7.0, 20);
 }, { passive:true });
 
-// ─────────────────────────────────────
-// RAYCASTER — click ảnh
-// ─────────────────────────────────────
-const rc = new THREE.Raycaster();
-rc.params.Sprite = { threshold: 0.5 };
-const mouse2 = new THREE.Vector2();
-
-renderer.domElement.addEventListener('click', e => {
-  if (document.getElementById('viewer').classList.contains('open')) return;
-  if (zoom >= ZOOM_REVEAL) return;
-  mouse2.x =  (e.clientX/innerWidth)  * 2 - 1;
-  mouse2.y = -(e.clientY/innerHeight) * 2 + 1;
-  rc.setFromCamera(mouse2, camera);
-  const hits = rc.intersectObjects(sprites.filter(Boolean));
-  if (hits.length) openV(hits[0].object.userData.idx);
-});
-
-// ─────────────────────────────────────
-// VIEWER
-// ─────────────────────────────────────
-let curIdx = 0;
-function openV(idx) {
-  curIdx = idx;
-  const p = PHOTOS[idx];
-  document.getElementById('vimg').src   = p.url;
-  document.getElementById('vname').textContent = p.name || '';
-  document.getElementById('vdate').textContent = p.date || '';
-  document.getElementById('viewer').classList.add('open');
-  dotsEl.style.opacity = '1';
-  document.querySelectorAll('.dot-ind').forEach((d,i) =>
-    d.classList.toggle('active', i===idx)
-  );
-}
-function closeV() {
-  document.getElementById('viewer').classList.remove('open');
-  dotsEl.style.opacity = '0';
-}
-function navV(dir) {
-  openV((curIdx + dir + PHOTOS.length) % PHOTOS.length);
-}
-window.openV = openV; window.closeV = closeV; window.navV = navV;
-
-document.getElementById('viewer').addEventListener('click', function(e){
-  if (e.target === this) closeV();
-});
-
-// ─────────────────────────────────────
-// ANIMATION
-// ─────────────────────────────────────
+// ─────────────────────────────────────────
+// OSCILLATION helper
+// ─────────────────────────────────────────
 function osc(i, t, amp) {
-  return Math.sin(t*1.1 + i*0.00831) * amp
-       + Math.cos(t*0.73 + i*0.01543) * amp * 0.45;
+  return Math.sin(t*1.1  + i*0.00831)*amp
+       + Math.cos(t*0.73 + i*0.01543)*amp*0.45;
 }
 
+// ─────────────────────────────────────────
+// ANIMATION LOOP
+// ─────────────────────────────────────────
 function animate() {
   requestAnimationFrame(animate);
-  const t = Date.now() * 0.00040;
+  const t        = Date.now() * 0.00040;
   const revealed = isHand && zoom < ZOOM_REVEAL;
 
-  // ─ Lõi ─
+  // ── Core particles ──
   const cp = pCore.geometry.attributes.position.array;
   for (let i = 0; i < CORE_COUNT; i++) {
-    const spd=coreRand[i*4], o1=coreRand[i*4+1], o2=coreRand[i*4+2];
+    const spd=coreRnd[i*4], o1=coreRnd[i*4+1], o2=coreRnd[i*4+2];
     let tx, ty, tz;
     if (isHand) {
-      // Hình thành + thở nhẹ
-      const b = osc(i, t, 0.07);
-      tx = coreBase[i*3]   + b;
-      ty = coreBase[i*3+1] + b * 0.75;
-      tz = coreBase[i*3+2] + b;
+      const b = osc(i, t, 0.065);
+      tx = coreBase[i*3]  +b;   ty = coreBase[i*3+1]+b*0.7;  tz = coreBase[i*3+2]+b;
     } else {
-      // Bay Lissajous mềm mại
-      const r = 10 + Math.sin(t*spd*0.38+o2) * 3.2;
-      tx = Math.sin(t*spd      +o1      ) * r;
-      ty = Math.cos(t*spd*0.58 +o2      ) * r * 0.7;
-      tz = Math.sin(t*spd*0.82 +o1+1.31 ) * r;
+      const r = 10 + Math.sin(t*spd*0.38+o2)*3.2;
+      tx = Math.sin(t*spd      +o1     )*r;
+      ty = Math.cos(t*spd*0.58 +o2     )*r*0.68;
+      tz = Math.sin(t*spd*0.82 +o1+1.3 )*r;
     }
     const ls = isHand ? 0.020 : 0.015;
-    cp[i*3]   += (tx - cp[i*3])   * ls;
-    cp[i*3+1] += (ty - cp[i*3+1]) * ls;
-    cp[i*3+2] += (tz - cp[i*3+2]) * ls;
+    cp[i*3]  +=(tx-cp[i*3]  )*ls;
+    cp[i*3+1]+=(ty-cp[i*3+1])*ls;
+    cp[i*3+2]+=(tz-cp[i*3+2])*ls;
   }
   pCore.geometry.attributes.position.needsUpdate = true;
 
-  // ─ Vành đai ─
+  // ── Ring particles ──
   const rp = pRing.geometry.attributes.position.array;
   for (let i = 0; i < RING_COUNT; i++) {
-    const spd=ringRand[i*3], o1=ringRand[i*3+1];
+    const spd=ringRnd[i*3], o1=ringRnd[i*3+1];
     let tx, ty, tz;
     if (isHand) {
-      const b = osc(i+40000, t, 0.035);
-      tx = ringBase[i*3]   + b;
-      ty = ringBase[i*3+1] + b * 0.25;
-      tz = ringBase[i*3+2] + b;
+      const b = osc(i+40000, t, 0.03);
+      tx = ringBase[i*3]+b;  ty = ringBase[i*3+1]+b*0.2;  tz = ringBase[i*3+2]+b;
     } else {
-      const r2 = 12 + Math.sin(t*spd*0.28+o1) * 3.8;
-      tx = Math.cos(t*spd*0.48 +o1     ) * r2;
-      ty = Math.sin(t*spd*0.33 +o1+0.8 ) * r2 * 0.30;
-      tz = Math.sin(t*spd*0.62 +o1     ) * r2;
+      const r2 = 12+Math.sin(t*spd*0.28+o1)*3.8;
+      tx = Math.cos(t*spd*0.48+o1    )*r2;
+      ty = Math.sin(t*spd*0.33+o1+0.8)*r2*0.28;
+      tz = Math.sin(t*spd*0.62+o1    )*r2;
     }
     const lr = isHand ? 0.016 : 0.012;
-    rp[i*3]   += (tx - rp[i*3])   * lr;
-    rp[i*3+1] += (ty - rp[i*3+1]) * lr;
-    rp[i*3+2] += (tz - rp[i*3+2]) * lr;
+    rp[i*3]  +=(tx-rp[i*3]  )*lr;
+    rp[i*3+1]+=(ty-rp[i*3+1])*lr;
+    rp[i*3+2]+=(tz-rp[i*3+2])*lr;
   }
   pRing.geometry.attributes.position.needsUpdate = true;
 
-  // ─ Rotation ─
+  // ── Rotation — pCore, pRing, photoGroup xoay CÙNG NHAU ──
   const tRX = isHand ? rotX : 0;
   const tRY = isHand ? rotY : 0;
-  pCore.rotation.x = THREE.MathUtils.lerp(pCore.rotation.x, tRX, 0.04);
+
+  // Lerp rotation
+  const nextRX = THREE.MathUtils.lerp(pCore.rotation.x, tRX,         0.04);
+  const nextRY = THREE.MathUtils.lerp(pCore.rotation.y, tRY + pCore.rotation.y * 0, 0.04);
+
+  pCore.rotation.x = nextRX;
   pCore.rotation.y = THREE.MathUtils.lerp(pCore.rotation.y, tRY, 0.04);
-  pCore.rotation.y += 0.00085;
+  pCore.rotation.y += 0.00085; // tự xoay
+
+  // Vành đai xoay cùng nhưng thêm tilt
   pRing.rotation.x = THREE.MathUtils.lerp(pRing.rotation.x, tRX+RING_TILT, 0.04);
   pRing.rotation.y = THREE.MathUtils.lerp(pRing.rotation.y, tRY, 0.04);
   pRing.rotation.y += 0.00055;
 
-  // ─ Camera ─
+  // photoGroup xoay chính xác như pCore — ảnh dính trên cầu
+  photoGroup.rotation.x = pCore.rotation.x;
+  photoGroup.rotation.y = pCore.rotation.y;
+
+  // ── Camera zoom ──
   camera.position.z = THREE.MathUtils.lerp(camera.position.z, zoom, 0.05);
 
-  // ─ Sprites ─
+  // ── Sprites opacity: fade theo zoom ──
+  // Dùng smoothstep để fade mượt trong khoảng ZOOM_REVEAL → ZOOM_SHOW
+  const zoomFactor = THREE.MathUtils.clamp(
+    THREE.MathUtils.mapLinear(zoom, ZOOM_REVEAL, ZOOM_SHOW, 0, 1), 0, 1
+  );
+  // Chỉ hiện khi có tay
+  const baseOp = isHand ? zoomFactor * zoomFactor * (3 - 2*zoomFactor) : 0; // smoothstep
+
   sprites.forEach((sp, i) => {
     if (!sp) return;
-    // Shimmer opacity — nhấp nháy nhẹ khi hiện
-    const targetOp = revealed ? 0.88 + Math.sin(t*1.2 + sp.userData.phase)*0.12 : 0;
-    sp.material.opacity = THREE.MathUtils.lerp(sp.material.opacity, targetOp, 0.035);
+    // Shimmer nhẹ khi hiện
+    const shimmer = baseOp > 0.05
+      ? Math.sin(t*0.9 + sp.userData.phase)*0.06
+      : 0;
+    const targetOp = THREE.MathUtils.clamp(baseOp + shimmer, 0, 1);
+    sp.material.opacity = THREE.MathUtils.lerp(sp.material.opacity, targetOp, 0.04);
     sp.material.needsUpdate = true;
-
-    // Nhấp nhô nhẹ quanh bề mặt
-    if (revealed && sp.userData.basePos) {
-      const bp = sp.userData.basePos;
-      const w  = Math.sin(t * 0.75 + sp.userData.phase) * 0.055;
-      sp.position.set(bp.x*(1+w), bp.y*(1+w*0.6), bp.z*(1+w));
-    }
   });
 
-  // ─ Bloom adapt ─
-  bloom.strength = THREE.MathUtils.lerp(
-    bloom.strength,
-    zoom < ZOOM_REVEAL ? 1.4 : 3.0,
-    0.04
+  // ── Bloom: giảm hẳn khi zoom vào để ảnh không bị chói ──
+  const targetBloom = THREE.MathUtils.mapLinear(
+    THREE.MathUtils.clamp(zoom, ZOOM_SHOW, ZOOM_DEF),
+    ZOOM_SHOW, ZOOM_DEF,
+    0.6,   // zoom vào: bloom rất nhẹ, ảnh rõ
+    2.8    // zoom xa: bloom rực
   );
+  bloom.strength = THREE.MathUtils.lerp(bloom.strength, targetBloom, 0.04);
 
-  // ─ Intro fade ─
+  // ── Fade intro khi có tay ──
   if (isHand) {
     const intro = document.getElementById('intro');
-    if (intro.style.opacity !== '0') intro.style.opacity = '0';
+    if (intro) intro.style.opacity = '0';
   }
 
   composer.render();

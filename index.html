@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -6,93 +7,110 @@
 <title>✦ Ký ức của chúng mình ✦</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#000; overflow:hidden; }
+body { background:#000; overflow:hidden; font-family:'Georgia',serif; }
 canvas { display:block; }
 video  { display:none; }
 
-#intro {
-  position:fixed; inset:0; z-index:50;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  pointer-events:none; transition:opacity 1.5s;
-}
-#intro h1 {
-  font-family:'Georgia',serif; font-weight:normal;
-  font-size:clamp(20px,3.5vw,34px); letter-spacing:6px;
-  color:rgba(255,235,160,0);
-  animation:fadeIn 3s ease-out 0.8s forwards;
-}
-#intro p {
-  margin-top:14px; font-family:'Georgia',serif;
-  font-size:clamp(10px,1.6vw,13px); letter-spacing:4px;
-  text-transform:uppercase; color:rgba(255,200,80,0);
-  animation:fadeIn 3s ease-out 1.8s forwards;
-}
-@keyframes fadeIn { to { color:rgba(255,235,160,0.65); } }
-
-#hud {
-  position:fixed; bottom:26px; left:50%; transform:translateX(-50%);
-  z-index:100; pointer-events:none;
-  display:flex; align-items:center; gap:9px;
-  border:0.5px solid rgba(255,220,80,0.18);
-  border-radius:40px; padding:7px 20px;
-  opacity:0; animation:fadeHud 1s ease-out 4.5s forwards;
-}
-@keyframes fadeHud { to { opacity:1; } }
-#hud .dot {
-  width:5px; height:5px; border-radius:50%;
-  background:rgba(255,200,60,0.45);
-  animation:blink 2.8s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:.15} 50%{opacity:.9} }
-#hud span {
-  font-family:'Georgia',serif; font-size:11px;
-  letter-spacing:3px; color:rgba(255,210,100,0.45);
-}
-
-#connect-status {
-  position:fixed; top:18px; left:50%; transform:translateX(-50%);
-  z-index:100; pointer-events:none;
-  display:flex; align-items:center; gap:8px;
-  opacity:0; transition:opacity 0.8s;
-}
-#connect-status.show { opacity:1; }
-#connect-dot {
-  width:7px; height:7px; border-radius:50%;
-  background:rgba(100,100,100,0.4);
-  transition:background 0.6s, box-shadow 0.6s;
-}
-#connect-dot.online {
-  background:rgba(120,255,180,0.9);
-  box-shadow:0 0 8px rgba(100,255,160,0.6);
-  animation:heartbeat 1.8s ease-in-out infinite;
-}
-@keyframes heartbeat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
-#connect-label {
-  font-family:'Georgia',serif; font-size:11px;
-  letter-spacing:2px; color:rgba(200,200,200,0.35);
-  transition:color 0.6s;
-}
-#connect-label.online { color:rgba(120,255,180,0.7); }
-
-#role-badge {
-  position:fixed; top:18px; right:18px; z-index:100;
-  font-family:'Georgia',serif; font-size:10px;
-  letter-spacing:2px; color:rgba(255,210,100,0.3);
-  pointer-events:none;
-}
-
+/* LOADING */
 #loading {
-  position:fixed; inset:0; z-index:200;
-  display:flex; align-items:center; justify-content:center;
-  background:#000;
-  transition:opacity 0.8s;
+position:fixed; inset:0; z-index:500;
+display:flex; flex-direction:column;
+align-items:center; justify-content:center;
+background:#000; transition:opacity 1s;
 }
 #loading p {
-  font-family:'Georgia',serif; font-size:12px;
-  letter-spacing:4px; color:rgba(255,210,100,0.5);
+font-size:12px; letter-spacing:5px; text-transform:uppercase;
+color:rgba(255,210,100,0.4);
+animation:pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+/* INTRO */
+#intro {
+position:fixed; inset:0; z-index:50;
+display:flex; flex-direction:column;
+align-items:center; justify-content:center;
+pointer-events:none; transition:opacity 2s;
+}
+#intro h1 {
+font-weight:normal; font-size:clamp(18px,3vw,32px);
+letter-spacing:7px; color:rgba(255,235,160,0);
+animation:fadeIn 3s ease-out 0.5s forwards;
+}
+#intro p {
+margin-top:12px; font-size:clamp(9px,1.4vw,12px);
+letter-spacing:4px; text-transform:uppercase;
+color:rgba(255,200,80,0);
+animation:fadeIn 3s ease-out 1.5s forwards;
+}
+@keyframes fadeIn { to { color:rgba(255,235,160,0.6); } }
+
+/* HUD bottom */
+#hud {
+position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+z-index:100; pointer-events:none;
+display:flex; align-items:center; gap:8px;
+border:0.5px solid rgba(255,220,80,0.15);
+border-radius:40px; padding:6px 18px;
+opacity:0; animation:showHud 1s ease-out 5s forwards;
+}
+@keyframes showHud { to{opacity:1} }
+#hud .dot {
+width:5px; height:5px; border-radius:50%;
+background:rgba(255,200,60,0.4);
+animation:blink 2.5s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:.1}50%{opacity:.9}}
+#hud span { font-size:10px; letter-spacing:3px; color:rgba(255,210,100,0.4); }
+
+/* CONNECTION STATUS — top center */
+#conn {
+position:fixed; top:20px; left:50%; transform:translateX(-50%);
+z-index:100; pointer-events:none;
+display:flex; align-items:center; gap:8px;
+opacity:0; transition:opacity 0.8s;
+}
+#conn.show { opacity:1; }
+#conn-dot {
+width:8px; height:8px; border-radius:50%;
+background:rgba(80,80,80,0.5);
+transition:all 0.8s;
+}
+#conn-dot.live {
+background:rgba(100,255,160,0.95);
+box-shadow:0 0 10px rgba(80,255,140,0.7);
+animation:beat 2s ease-in-out infinite;
+}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+#conn-txt {
+font-size:10px; letter-spacing:3px; text-transform:uppercase;
+color:rgba(180,180,180,0.35); transition:color 0.8s;
+}
+#conn-txt.live { color:rgba(100,255,160,0.65); }
+
+/* ROLE */
+#role {
+position:fixed; top:20px; right:20px; z-index:100;
+font-size:9px; letter-spacing:3px; text-transform:uppercase;
+color:rgba(255,210,100,0.25); pointer-events:none;
+}
+
+/* ENERGY BAR — hiện khi cả 2 có tay */
+#energy-bar {
+position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
+z-index:100; pointer-events:none;
+width:200px; height:1px;
+background:rgba(255,255,255,0.05);
+border-radius:1px; opacity:0; transition:opacity 0.5s;
+}
+#energy-fill {
+height:100%; width:0%; border-radius:1px;
+background:linear-gradient(90deg, rgba(255,180,60,0.6), rgba(255,255,200,0.9), rgba(255,180,60,0.6));
+transition:width 0.3s ease;
+box-shadow:0 0 6px rgba(255,200,80,0.8);
 }
 </style>
+
 </head>
 <body>
 
@@ -105,36 +123,32 @@ video  { display:none; }
   <p>Đưa tay · Nhíu ngón để khám phá</p>
 </div>
 
-<div id="hud">
-  <div class="dot"></div>
-  <span id="hud-txt">Đưa tay vào khung hình</span>
-</div>
-
-<div id="connect-status">
-  <div id="connect-dot"></div>
-  <span id="connect-label">Chờ người kia kết nối...</span>
-</div>
-
-<div id="role-badge"></div>
+<div id="hud"><div class="dot"></div><span id="hud-txt">Đưa tay vào khung hình</span></div>
+<div id="conn"><div id="conn-dot"></div><span id="conn-txt">Chờ kết nối...</span></div>
+<div id="role"></div>
+<div id="energy-bar"><div id="energy-fill"></div></div>
 
 <!-- ══════════════════════════════════════
-     ✦  THÊM ẢNH Ở ĐÂY
+     ✦  THÊM ẢNH Ở ĐÂY (URL ImgBB)
 ════════════════════════════════════════ -->
+
 <script>
 const PHOTOS = [
-  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau',    date:'14.02.2022' },
-  { url:'https://picsum.photos/seed/b2/600/450', name:'Cà phê sáng hôm ấy',  date:'20.03.2022' },
-  { url:'https://picsum.photos/seed/c3/600/450', name:'Sinh nhật em',          date:'05.07.2022' },
-  { url:'https://picsum.photos/seed/d4/600/450', name:'Chuyến đi Đà Lạt',     date:'10.09.2022' },
-  { url:'https://picsum.photos/seed/e5/600/450', name:'Mưa hôm ấy',            date:'03.11.2022' },
-  { url:'https://picsum.photos/seed/f6/600/450', name:'Giáng sinh đầu tiên',   date:'25.12.2022' },
-  { url:'https://picsum.photos/seed/g7/600/450', name:'Tết bên nhau',           date:'22.01.2023' },
-  { url:'https://picsum.photos/seed/h8/600/450', name:'Buổi chiều ở biển',     date:'15.04.2023' },
+  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau',   date:'14.02.2022' },
+  { url:'https://picsum.photos/seed/b2/600/450', name:'Cà phê sáng hôm ấy', date:'20.03.2022' },
+  { url:'https://picsum.photos/seed/c3/600/450', name:'Sinh nhật em',         date:'05.07.2022' },
+  { url:'https://picsum.photos/seed/d4/600/450', name:'Chuyến đi Đà Lạt',    date:'10.09.2022' },
+  { url:'https://picsum.photos/seed/e5/600/450', name:'Mưa hôm ấy',           date:'03.11.2022' },
+  { url:'https://picsum.photos/seed/f6/600/450', name:'Giáng sinh đầu tiên',  date:'25.12.2022' },
+  { url:'https://picsum.photos/seed/g7/600/450', name:'Tết bên nhau',          date:'22.01.2023' },
+  { url:'https://picsum.photos/seed/h8/600/450', name:'Buổi chiều ở biển',    date:'15.04.2023' },
 ];
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
 <script type="importmap">
 {
   "imports": {
@@ -151,13 +165,12 @@ import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import {
-  getDatabase, ref, set, get, onValue,
-  onDisconnect, runTransaction, remove
+  getDatabase, ref, set, onValue, onDisconnect, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-// ─────────────────────────────────────────
-// FIREBASE INIT
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════
 const app = initializeApp({
   apiKey:            "AIzaSyA8pALgEfE16ffDxR1QEGe39iyvvX-TnTk",
   authDomain:        "memory-planet-connect.firebaseapp.com",
@@ -169,100 +182,80 @@ const app = initializeApp({
 });
 const db = getDatabase(app);
 
-// ─────────────────────────────────────────
-// ROLE ASSIGNMENT — dùng transaction đảm bảo atomic
-// Slot A lấy trước, B lấy sau, không bao giờ trùng
-// ─────────────────────────────────────────
-const slotRef = ref(db, 'slots');
-const myStateRef_A = ref(db, 'planets/A');
-const myStateRef_B = ref(db, 'planets/B');
-
+// Atomic role claim
 let myRole = null;
-let myRef  = null;
-let otherRef = null;
+await new Promise((resolve) => {
+  const attempt = () => {
+    runTransaction(ref(db, 'slots'), (cur) => {
+      const s = cur || { A: false, B: false };
+      if (!s.A)      { s.A = true; myRole = 'A'; }
+      else if (!s.B) { s.B = true; myRole = 'B'; }
+      else return; // abort
+      return s;
+    }).then(r => {
+      if (r.committed) resolve();
+      else setTimeout(attempt, 800);
+    }).catch(() => { myRole = Math.random()<.5?'A':'B'; resolve(); });
+  };
+  attempt();
+});
 
-async function claimRole() {
-  // Transaction trên slots: { A: true/false, B: true/false }
-  // true = đang dùng, false/null = trống
-  return new Promise((resolve) => {
-    runTransaction(slotRef, (current) => {
-      const slots = current || { A: false, B: false };
-      if (!slots.A) {
-        slots.A = true;
-        myRole = 'A';
-      } else if (!slots.B) {
-        slots.B = true;
-        myRole = 'B';
-      } else {
-        // Cả 2 đều đang dùng — abort, thử lại
-        return; // returning undefined = abort transaction
-      }
-      return slots;
-    }).then((result) => {
-      if (result.committed && myRole) {
-        resolve(myRole);
-      } else {
-        // Retry sau 1s (trường hợp cả 2 slot bận)
-        setTimeout(() => claimRole().then(resolve), 1000);
-      }
-    }).catch(() => {
-      // Fallback: nếu transaction lỗi, random role
-      myRole = Math.random() < 0.5 ? 'A' : 'B';
-      resolve(myRole);
-    });
-  });
-}
-
-// Chờ claim role xong mới khởi động Three.js
-const role = await claimRole();
-myRef    = ref(db, `planets/${role}`);
-otherRef = ref(db, `planets/${role === 'A' ? 'B' : 'A'}`);
-const slotMyRef = ref(db, `slots/${role}`);
-
-// Khi đóng tab → giải phóng slot và xóa state
+const myRef    = ref(db, `planets/${myRole}`);
+const otherRef = ref(db, `planets/${myRole==='A'?'B':'A'}`);
+onDisconnect(ref(db, `slots/${myRole}`)).set(false);
 onDisconnect(myRef).remove();
-onDisconnect(slotMyRef).set(false);
 
-// Ghi initial state
-await set(myRef, { online: true, isHand: false, rotX: 0, rotY: 0, zoom: 15.5, ts: Date.now() });
-
-// Ẩn loading
-const loadingEl = document.getElementById('loading');
-loadingEl.style.opacity = '0';
-setTimeout(() => loadingEl.style.display = 'none', 800);
-
-// Hiện role badge
-document.getElementById('role-badge').textContent =
-  role === 'A' ? '✦ Người yêu' : '✦ Của tôi';
-
-// Publish state lên Firebase
-let lastPublish = 0;
-function publishState(data) {
+// Publish throttled
+let _lastPub = 0;
+function publish(data) {
   const now = Date.now();
-  if (now - lastPublish < 80) return; // throttle 80ms
-  lastPublish = now;
-  set(myRef, { online: true, ...data, ts: now });
+  if (now - _lastPub < 60) return;
+  _lastPub = now;
+  set(myRef, { online:true, ...data, ts:now });
 }
 
-// ─────────────────────────────────────────
-// CONSTANTS
-// ─────────────────────────────────────────
-const GLOBE_R      = 4.8;
-const CORE_COUNT   = 18000;
-const RING_COUNT   = 8000;
-const RING_TILT    = 0.24;
-const ZOOM_REVEAL  = 9.5;
-const ZOOM_SHOW    = 7.5;
-const ZOOM_DEF     = 15.5;
-const THREAD_COUNT = 3000;
-const OTHER_OFFSET = 14;
+// UI
+document.getElementById('loading').style.opacity = '0';
+setTimeout(() => document.getElementById('loading').style.display='none', 1000);
+document.getElementById('role').textContent = myRole==='A' ? '✦ Người yêu' : '✦ Của tôi';
+document.getElementById('conn').classList.add('show');
 
-// ─────────────────────────────────────────
+// Listen other
+let other = null;
+onValue(otherRef, snap => {
+  const d = snap.val();
+  other = (d && d.online) ? d : null;
+  const live = !!other;
+  document.getElementById('conn-dot').classList.toggle('live', live);
+  document.getElementById('conn-txt').classList.toggle('live', live);
+  document.getElementById('conn-txt').textContent = live
+    ? (myRole==='A' ? '✦ Người yêu đang ở đây' : '✦ Của tôi đang ở đây')
+    : 'Chờ người kia kết nối...';
+});
+
+// ═══════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════
+const GLOBE_R     = 4.5;
+const CORE_N      = 16000;
+const RING_N      = 7000;
+const RING_TILT   = 0.24;
+const THREAD_N    = 5000;   // nhiều hạt dây hơn
+const STREAM_N    = 800;    // hạt chạy dọc dây
+const ZOOM_REVEAL = 9.5;
+const ZOOM_SHOW   = 7.5;
+const ZOOM_DEF    = 15.5;
+
+// Khoảng cách 2 cầu — sẽ thay đổi động theo tương tác
+let globeDist = 13.0;       // target distance
+let globeDistCur = 13.0;    // current (lerped)
+
+// ═══════════════════════════════════════════
 // SCENE
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 const scene       = new THREE.Scene();
 const scenePhotos = new THREE.Scene();
-const camera      = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 1000);
+const camera      = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 2000);
 camera.position.z = ZOOM_DEF;
 
 const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
@@ -272,186 +265,195 @@ document.body.appendChild(renderer.domElement);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(
-  new THREE.Vector2(innerWidth, innerHeight), 2.8, 0.5, 0.06
-);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 2.6, 0.5, 0.05);
 composer.addPass(bloom);
 
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 // TEXTURES
-// ─────────────────────────────────────────
-function glowTex(size, r, g, b) {
+// ═══════════════════════════════════════════
+function mkTex(size, r, g, b) {
   const cv = document.createElement('canvas');
   cv.width = cv.height = size;
   const ctx = cv.getContext('2d');
-  const grd = ctx.createRadialGradient(size/2,size/2,0, size/2,size/2,size/2);
-  grd.addColorStop(0,    `rgba(${r},${g},${b},1)`);
-  grd.addColorStop(0.12, `rgba(${r},${g},${b},0.9)`);
-  grd.addColorStop(0.4,  `rgba(${r},${g},${b},0.35)`);
-  grd.addColorStop(0.7,  `rgba(${r},${g},${b},0.08)`);
-  grd.addColorStop(1,    'rgba(0,0,0,0)');
-  ctx.fillStyle = grd; ctx.fillRect(0,0,size,size);
+  const g2 = ctx.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+  g2.addColorStop(0,   `rgba(${r},${g},${b},1)`);
+  g2.addColorStop(0.1, `rgba(${r},${g},${b},0.95)`);
+  g2.addColorStop(0.4, `rgba(${r},${g},${b},0.3)`);
+  g2.addColorStop(0.7, `rgba(${r},${g},${b},0.07)`);
+  g2.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle=g2; ctx.fillRect(0,0,size,size);
   return new THREE.CanvasTexture(cv);
 }
-const texCore   = glowTex(64, 255, 245, 205);  // vàng ngà
-const texRing   = glowTex(32, 210, 225, 255);  // xanh lạnh
-const texCoreB  = glowTex(64, 255, 180, 220);  // hồng
-const texThread = glowTex(16, 255, 210, 140);  // vàng cam
+const tCore   = mkTex(64, 255, 245, 205);
+const tCoreB  = mkTex(64, 255, 180, 215);
+const tRing   = mkTex(32, 210, 225, 255);
+const tRingB  = mkTex(32, 255, 200, 240);
+const tThread = mkTex(16, 255, 215, 150);
+const tStream = mkTex(12, 255, 255, 220);
 
-// ─────────────────────────────────────────
-// BUILD GLOBE helper
-// ─────────────────────────────────────────
-function buildGlobe(count, offsetX, texC, texR, colorC, colorR) {
-  const geo   = new THREE.BufferGeometry();
-  const pos   = new Float32Array(count * 3);
-  const base  = new Float32Array(count * 3);
-  const rnd   = new Float32Array(count * 4);
-
-  for (let i = 0; i < count; i++) {
-    const phi   = Math.acos(-1 + (2*i)/count);
-    const theta = Math.sqrt(count * Math.PI) * phi;
-    const r     = GLOBE_R + Math.random() * 0.6;
-    base[i*3]   = r*Math.sin(phi)*Math.cos(theta) + offsetX;
-    base[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
-    base[i*3+2] = r*Math.cos(phi);
-    pos[i*3]    = (Math.random()-.5)*22 + offsetX;
-    pos[i*3+1]  = (Math.random()-.5)*22;
-    pos[i*3+2]  = (Math.random()-.5)*22;
-    rnd[i*4]    = Math.random()*0.25+0.07;
-    rnd[i*4+1]  = Math.random()*Math.PI*2;
-    rnd[i*4+2]  = Math.random()*Math.PI*2;
-    rnd[i*4+3]  = Math.random();
+// ═══════════════════════════════════════════
+// GLOBE BUILDER
+// ═══════════════════════════════════════════
+function buildGlobe(n, tc, tr, cc, cr) {
+  // Core
+  const gC  = new THREE.BufferGeometry();
+  const pos = new Float32Array(n*3);
+  const base= new Float32Array(n*3);
+  const rnd = new Float32Array(n*4);
+  for (let i=0;i<n;i++) {
+    const phi  =Math.acos(-1+(2*i)/n);
+    const theta=Math.sqrt(n*Math.PI)*phi;
+    const r    =GLOBE_R+Math.random()*0.6;
+    base[i*3]  =r*Math.sin(phi)*Math.cos(theta);
+    base[i*3+1]=r*Math.sin(phi)*Math.sin(theta);
+    base[i*3+2]=r*Math.cos(phi);
+    pos[i*3]  =(Math.random()-.5)*20;
+    pos[i*3+1]=(Math.random()-.5)*20;
+    pos[i*3+2]=(Math.random()-.5)*20;
+    rnd[i*4]  =Math.random()*.24+.07;
+    rnd[i*4+1]=Math.random()*Math.PI*2;
+    rnd[i*4+2]=Math.random()*Math.PI*2;
+    rnd[i*4+3]=Math.random();
   }
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const points = new THREE.Points(geo, new THREE.PointsMaterial({
-    size:0.14, map:texC, transparent:true,
-    blending:THREE.AdditiveBlending, depthWrite:false, color:colorC
+  gC.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const pts=new THREE.Points(gC, new THREE.PointsMaterial({
+    size:.13, map:tc, transparent:true,
+    blending:THREE.AdditiveBlending, depthWrite:false, color:cc
   }));
 
   // Ring
-  const geoR = new THREE.BufferGeometry();
-  const posR = new Float32Array(RING_COUNT*3);
-  const baseR= new Float32Array(RING_COUNT*3);
-  const rndR = new Float32Array(RING_COUNT*3);
-  for (let i = 0; i < RING_COUNT; i++) {
-    const angle=Math.random()*Math.PI*2;
+  const gR  =new THREE.BufferGeometry();
+  const posR=new Float32Array(RING_N*3);
+  const baseR=new Float32Array(RING_N*3);
+  const rndR=new Float32Array(RING_N*3);
+  for (let i=0;i<RING_N;i++) {
+    const a=Math.random()*Math.PI*2;
     const u=Math.random();
-    const rad=6.8+u*u*5.2;
-    const px=Math.cos(angle)*rad, pz=Math.sin(angle)*rad;
-    const py=(Math.random()-.5)*0.07;
-    baseR[i*3]  =px+offsetX;
-    baseR[i*3+1]=py-pz*Math.sin(RING_TILT)*0.14;
-    baseR[i*3+2]=pz*Math.cos(RING_TILT*0.14);
-    posR[i*3]  =(Math.random()-.5)*24+offsetX;
+    const rad=6.5+u*u*5.0;
+    const px=Math.cos(a)*rad, pz=Math.sin(a)*rad;
+    const py=(Math.random()-.5)*.07;
+    baseR[i*3]  =px;
+    baseR[i*3+1]=py-pz*Math.sin(RING_TILT)*.14;
+    baseR[i*3+2]=pz*Math.cos(RING_TILT*.14);
+    posR[i*3]  =(Math.random()-.5)*22;
     posR[i*3+1]=(Math.random()-.5)*10;
-    posR[i*3+2]=(Math.random()-.5)*24;
-    rndR[i*3]  =Math.random()*0.17+0.04;
+    posR[i*3+2]=(Math.random()-.5)*22;
+    rndR[i*3]  =Math.random()*.16+.04;
     rndR[i*3+1]=Math.random()*Math.PI*2;
     rndR[i*3+2]=Math.random();
   }
-  geoR.setAttribute('position', new THREE.BufferAttribute(posR, 3));
-  const ring = new THREE.Points(geoR, new THREE.PointsMaterial({
-    size:0.08, map:texR, transparent:true,
-    blending:THREE.AdditiveBlending, depthWrite:false, color:colorR
+  gR.setAttribute('position', new THREE.BufferAttribute(posR,3));
+  const ring=new THREE.Points(gR, new THREE.PointsMaterial({
+    size:.075, map:tr, transparent:true,
+    blending:THREE.AdditiveBlending, depthWrite:false, color:cr
   }));
 
-  return { points, ring, geo, geoR, pos, base, posR, baseR, rnd, rndR };
+  return { pts, ring, gC, gR, pos, base, rnd, posR, baseR, rndR };
 }
 
-// Cầu A (mình) — offset 0
-const globeA = buildGlobe(CORE_COUNT, 0,            texCore,  texRing, 0xfff5cc, 0xddeeff);
-// Cầu B (người kia) — offset sang phải
-const globeB = buildGlobe(CORE_COUNT, OTHER_OFFSET,  texCoreB, texRing, 0xffccee, 0xffddff);
+const gA = buildGlobe(CORE_N, tCore,  tRing,  0xfff5cc, 0xddeeff);
+const gB = buildGlobe(CORE_N, tCoreB, tRingB, 0xffcce8, 0xffddf5);
 
-scene.add(globeA.points); scene.add(globeA.ring);
-scene.add(globeB.points); scene.add(globeB.ring);
-globeB.points.visible = false;
-globeB.ring.visible   = false;
+// Cầu A ở bên trái, B ở bên phải — sẽ lerp theo globeDistCur
+scene.add(gA.pts); scene.add(gA.ring);
+scene.add(gB.pts); scene.add(gB.ring);
+gB.pts.visible  = false;
+gB.ring.visible = false;
 
-// ─────────────────────────────────────────
-// THREAD
-// ─────────────────────────────────────────
-const geoThread = new THREE.BufferGeometry();
-const threadPos = new Float32Array(THREAD_COUNT * 3);
-const threadRnd = new Float32Array(THREAD_COUNT * 2);
-for (let i = 0; i < THREAD_COUNT; i++) {
-  const frac = i/THREAD_COUNT;
-  threadPos[i*3]   = frac * OTHER_OFFSET;
-  threadPos[i*3+1] = 0;
-  threadPos[i*3+2] = 0;
-  threadRnd[i*2]   = Math.random()*Math.PI*2;
-  threadRnd[i*2+1] = Math.random();
+// ═══════════════════════════════════════════
+// THREAD — dây hạt chính
+// ═══════════════════════════════════════════
+const gThread  = new THREE.BufferGeometry();
+const threadP  = new Float32Array(THREAD_N*3);
+const threadR  = new Float32Array(THREAD_N*2);
+for (let i=0;i<THREAD_N;i++) {
+  const f=i/THREAD_N;
+  threadP[i*3]=f*13; threadP[i*3+1]=0; threadP[i*3+2]=0;
+  threadR[i*2]=Math.random()*Math.PI*2;
+  threadR[i*2+1]=Math.random();
 }
-geoThread.setAttribute('position', new THREE.BufferAttribute(threadPos, 3));
-const pThread = new THREE.Points(geoThread, new THREE.PointsMaterial({
-  size:0.07, map:texThread, transparent:true,
+gThread.setAttribute('position', new THREE.BufferAttribute(threadP,3));
+const pThread=new THREE.Points(gThread, new THREE.PointsMaterial({
+  size:.065, map:tThread, transparent:true,
   blending:THREE.AdditiveBlending, depthWrite:false,
   color:0xffcc88, opacity:0
 }));
 scene.add(pThread);
 
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
+// STREAM — hạt chạy dọc dây như dòng điện
+// ═══════════════════════════════════════════
+const gStream  = new THREE.BufferGeometry();
+const streamP  = new Float32Array(STREAM_N*3);
+const streamT  = new Float32Array(STREAM_N); // 0..1 position along thread
+const streamSpd= new Float32Array(STREAM_N);
+for (let i=0;i<STREAM_N;i++) {
+  streamT[i]   = Math.random();
+  streamSpd[i] = .003 + Math.random()*.005;
+}
+gStream.setAttribute('position', new THREE.BufferAttribute(streamP,3));
+const pStream=new THREE.Points(gStream, new THREE.PointsMaterial({
+  size:.1, map:tStream, transparent:true,
+  blending:THREE.AdditiveBlending, depthWrite:false,
+  color:0xffffcc, opacity:0
+}));
+scene.add(pStream);
+
+// ═══════════════════════════════════════════
 // PHOTO CARDS
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 const photoGroup = new THREE.Group();
 scenePhotos.add(photoGroup);
 const GOLDEN = Math.PI*(3-Math.sqrt(5));
 
-function roundRect(ctx, x, y, w, h, r) {
+function roundRect(ctx,x,y,w,h,r){
   ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
-  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
   ctx.closePath();
 }
-
-function makeCard(photo, idx, total) {
+function makeCard(photo,idx,total){
   const W=300,H=225,PAD=14,FOOT=68;
-  const cw=W+PAD*2, ch=H+PAD+FOOT;
+  const cw=W+PAD*2,ch=H+PAD+FOOT;
   const cv=document.createElement('canvas');
-  cv.width=cw; cv.height=ch;
+  cv.width=cw;cv.height=ch;
   const ctx=cv.getContext('2d');
-  ctx.fillStyle='rgba(6,4,1,0.78)';
-  roundRect(ctx,0,0,cw,ch,12); ctx.fill();
-  ctx.strokeStyle='rgba(255,205,70,0.45)'; ctx.lineWidth=1;
-  roundRect(ctx,0,0,cw,ch,12); ctx.stroke();
-  ctx.fillStyle='rgba(40,30,10,0.5)';
-  roundRect(ctx,PAD,PAD,W,H,7); ctx.fill();
-  ctx.fillStyle='rgba(255,235,175,0.92)';
-  ctx.font='17px Georgia'; ctx.textAlign='center';
-  ctx.fillText(photo.name||'', cw/2, H+PAD+30);
-  ctx.fillStyle='rgba(255,185,60,0.42)';
+  ctx.fillStyle='rgba(5,3,1,0.80)';
+  roundRect(ctx,0,0,cw,ch,12);ctx.fill();
+  ctx.strokeStyle='rgba(255,205,70,0.4)';ctx.lineWidth=1;
+  roundRect(ctx,0,0,cw,ch,12);ctx.stroke();
+  ctx.fillStyle='rgba(255,235,175,0.9)';
+  ctx.font='17px Georgia';ctx.textAlign='center';
+  ctx.fillText(photo.name||'',cw/2,H+PAD+30);
+  ctx.fillStyle='rgba(255,185,60,0.4)';
   ctx.font='12px Georgia';
-  ctx.fillText(photo.date||'', cw/2, H+PAD+52);
+  ctx.fillText(photo.date||'',cw/2,H+PAD+52);
   const tex=new THREE.CanvasTexture(cv);
   const mat=new THREE.SpriteMaterial({
-    map:tex, transparent:true, opacity:0,
-    blending:THREE.NormalBlending, depthWrite:false,
-    sizeAttenuation:true, depthTest:false
+    map:tex,transparent:true,opacity:0,
+    blending:THREE.NormalBlending,depthWrite:false,
+    sizeAttenuation:true,depthTest:false
   });
   const sp=new THREE.Sprite(mat);
-  sp.scale.set(3.0*cw/H, 3.0, 1);
-  const phi_s  =Math.acos(1-2*(idx+0.5)/total);
-  const theta_s=GOLDEN*idx;
-  const rr=GLOBE_R+0.5;
-  sp.position.set(
-    rr*Math.sin(phi_s)*Math.cos(theta_s),
-    rr*Math.sin(phi_s)*Math.sin(theta_s),
-    rr*Math.cos(phi_s)
-  );
-  sp.userData={ phase:Math.random()*Math.PI*2 };
+  sp.scale.set(3.0*cw/H,3.0,1);
+  const ps=Math.acos(1-2*(idx+.5)/total);
+  const ts=GOLDEN*idx;
+  const rr=GLOBE_R+.5;
+  sp.position.set(rr*Math.sin(ps)*Math.cos(ts),rr*Math.sin(ps)*Math.sin(ts),rr*Math.cos(ps));
+  sp.userData={phase:Math.random()*Math.PI*2};
   photoGroup.add(sp);
-  const img=new Image(); img.crossOrigin='anonymous';
+  const img=new Image();img.crossOrigin='anonymous';
   img.onload=()=>{
-    ctx.save(); roundRect(ctx,PAD,PAD,W,H,7); ctx.clip();
-    ctx.drawImage(img,PAD,PAD,W,H); ctx.restore();
-    ctx.fillStyle='rgba(255,235,175,0.92)';
-    ctx.font='17px Georgia'; ctx.textAlign='center';
-    ctx.fillText(photo.name||'', cw/2, H+PAD+30);
-    ctx.fillStyle='rgba(255,185,60,0.42)';
+    ctx.save();roundRect(ctx,PAD,PAD,W,H,7);ctx.clip();
+    ctx.drawImage(img,PAD,PAD,W,H);ctx.restore();
+    ctx.fillStyle='rgba(255,235,175,0.9)';
+    ctx.font='17px Georgia';ctx.textAlign='center';
+    ctx.fillText(photo.name||'',cw/2,H+PAD+30);
+    ctx.fillStyle='rgba(255,185,60,0.4)';
     ctx.font='12px Georgia';
-    ctx.fillText(photo.date||'', cw/2, H+PAD+52);
+    ctx.fillText(photo.date||'',cw/2,H+PAD+52);
     tex.needsUpdate=true;
   };
   img.src=photo.url;
@@ -459,184 +461,236 @@ function makeCard(photo, idx, total) {
 }
 const sprites=PHOTOS.map((p,i)=>makeCard(p,i,PHOTOS.length));
 
-// ─────────────────────────────────────────
-// LISTEN OTHER DEVICE
-// ─────────────────────────────────────────
-let otherState = null;
-onValue(otherRef, snap => {
-  const data = snap.val();
-  otherState = (data && data.online) ? data : null;
-
-  const dot   = document.getElementById('connect-dot');
-  const label = document.getElementById('connect-label');
-  document.getElementById('connect-status').classList.add('show');
-
-  if (otherState) {
-    dot.classList.add('online');
-    label.classList.add('online');
-    label.textContent = role==='A' ? '✦ Người yêu đang online' : '✦ Của tôi đang online';
-  } else {
-    dot.classList.remove('online');
-    label.classList.remove('online');
-    label.textContent = 'Chờ người kia kết nối...';
-  }
-});
-
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 // HAND TRACKING
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 const videoEl=document.getElementById('input_video');
-let rotX=0, rotY=0, zoom=ZOOM_DEF, isHand=false;
+let rotX=0,rotY=0,zoom=ZOOM_DEF,isHand=false,pinchDist=0.15;
 
-const handsMP=new Hands({ locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
-handsMP.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.6 });
+const handsMP=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+handsMP.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.6});
 handsMP.onResults(res=>{
   const txt=document.getElementById('hud-txt');
   if (res.multiHandLandmarks?.length>0) {
     isHand=true;
     const lm=res.multiHandLandmarks[0];
-    rotY=(lm[9].x-0.5)*Math.PI*1.4;
-    rotX=(lm[9].y-0.5)*Math.PI*0.85;
-    const d=Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y);
+    rotY=(lm[9].x-.5)*Math.PI*1.4;
+    rotX=(lm[9].y-.5)*Math.PI*.85;
+    pinchDist=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
     zoom=THREE.MathUtils.clamp(
-      THREE.MathUtils.mapLinear(d,0.05,0.26,17,7.0), 7.0, 17
+      THREE.MathUtils.mapLinear(pinchDist,.05,.26,17,7.0),7.0,17
     );
     txt.textContent=zoom<ZOOM_REVEAL?'✦ Xoay tay để khám phá':'Nhíu ngón tay để zoom vào';
-    publishState({ isHand:true, rotX, rotY, zoom });
+    publish({isHand:true,rotX,rotY,zoom,pinchDist});
   } else {
     isHand=false;
-    rotX*=0.96; rotY*=0.96;
-    zoom=THREE.MathUtils.lerp(zoom,ZOOM_DEF,0.03);
+    rotX*=.96;rotY*=.96;
+    zoom=THREE.MathUtils.lerp(zoom,ZOOM_DEF,.03);
+    pinchDist=.15;
     txt.textContent='Đưa tay vào khung hình';
-    publishState({ isHand:false, rotX:0, rotY:0, zoom:ZOOM_DEF });
+    publish({isHand:false,rotX:0,rotY:0,zoom:ZOOM_DEF,pinchDist:.15});
   }
 });
 new Camera(videoEl,{
   onFrame:async()=>await handsMP.send({image:videoEl}),
-  width:640, height:480
+  width:640,height:480
 }).start();
 window.addEventListener('wheel',e=>{
-  zoom=THREE.MathUtils.clamp(zoom+e.deltaY*0.012,7.0,20);
+  zoom=THREE.MathUtils.clamp(zoom+e.deltaY*.012,7.0,20);
 },{passive:true});
 
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 // HELPERS
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 function osc(i,t,amp){
-  return Math.sin(t*1.1+i*0.00831)*amp
-       + Math.cos(t*0.73+i*0.01543)*amp*0.45;
+  return Math.sin(t*1.1+i*.00831)*amp+Math.cos(t*.73+i*.01543)*amp*.45;
 }
 
-function updateGlobe(globe, count, isActive, oRotX, oRotY, offsetX, t, isOther) {
-  const cp=globe.geo.attributes.position.array;
-  for (let i=0;i<count;i++) {
-    const spd=globe.rnd[i*4], o1=globe.rnd[i*4+1], o2=globe.rnd[i*4+2];
+// Catenary curve: đường cong võng giữa 2 điểm
+function catenary(t, p0, p1, sag) {
+  const x = THREE.MathUtils.lerp(p0.x, p1.x, t);
+  const y = THREE.MathUtils.lerp(p0.y, p1.y, t) - Math.sin(t*Math.PI)*sag;
+  const z = THREE.MathUtils.lerp(p0.z, p1.z, t);
+  return {x,y,z};
+}
+
+// Update một globe
+function tickGlobe(g, n, active, rx, ry, cx, t, seed) {
+  const cp=g.gC.attributes.position.array;
+  for (let i=0;i<n;i++) {
+    const s=g.rnd[i*4],o1=g.rnd[i*4+1],o2=g.rnd[i*4+2];
     let tx,ty,tz;
-    if (isActive) {
-      const b=osc(i+(isOther?99999:0), t, 0.065);
-      tx=globe.base[i*3]+b;
-      ty=globe.base[i*3+1]+b*0.7;
-      tz=globe.base[i*3+2]+b;
+    if (active) {
+      const b=osc(i+seed,t,.065);
+      tx=g.base[i*3]+b+cx;
+      ty=g.base[i*3+1]+b*.7;
+      tz=g.base[i*3+2]+b;
     } else {
-      const r=10+Math.sin(t*spd*0.38+o2)*3.2;
-      tx=Math.sin(t*spd+o1)*r + offsetX;
-      ty=Math.cos(t*spd*0.58+o2)*r*0.68;
-      tz=Math.sin(t*spd*0.82+o1+1.3)*r;
+      const r=9+Math.sin(t*s*.38+o2)*3;
+      tx=Math.sin(t*s+o1)*r+cx;
+      ty=Math.cos(t*s*.58+o2)*r*.68;
+      tz=Math.sin(t*s*.82+o1+1.3)*r;
     }
-    const ls=isActive?0.020:0.015;
-    cp[i*3]  +=(tx-cp[i*3]  )*ls;
+    const ls=active?.020:.015;
+    cp[i*3]+=(tx-cp[i*3])*ls;
     cp[i*3+1]+=(ty-cp[i*3+1])*ls;
     cp[i*3+2]+=(tz-cp[i*3+2])*ls;
   }
-  globe.geo.attributes.position.needsUpdate=true;
-  globe.points.rotation.x=THREE.MathUtils.lerp(globe.points.rotation.x, oRotX, 0.04);
-  globe.points.rotation.y=THREE.MathUtils.lerp(globe.points.rotation.y, oRotY, 0.04);
-  globe.points.rotation.y+=0.00085;
-  globe.ring.rotation.x=THREE.MathUtils.lerp(globe.ring.rotation.x, oRotX+RING_TILT, 0.04);
-  globe.ring.rotation.y=THREE.MathUtils.lerp(globe.ring.rotation.y, oRotY, 0.04);
-  globe.ring.rotation.y+=0.00055;
+  g.gC.attributes.position.needsUpdate=true;
+  g.pts.rotation.x=THREE.MathUtils.lerp(g.pts.rotation.x,rx,.04);
+  g.pts.rotation.y=THREE.MathUtils.lerp(g.pts.rotation.y,ry,.04);
+  g.pts.rotation.y+=.00085;
+  g.ring.rotation.x=THREE.MathUtils.lerp(g.ring.rotation.x,rx+RING_TILT,.04);
+  g.ring.rotation.y=THREE.MathUtils.lerp(g.ring.rotation.y,ry,.04);
+  g.ring.rotation.y+=.00055;
+  // Dịch chuyển cả group theo cx
+  g.pts.position.x=THREE.MathUtils.lerp(g.pts.position.x,cx,.06);
+  g.ring.position.x=THREE.MathUtils.lerp(g.ring.position.x,cx,.06);
 }
 
-// ─────────────────────────────────────────
+// ═══════════════════════════════════════════
 // ANIMATION
-// ─────────────────────────────────────────
-let camTargetX=0;
+// ═══════════════════════════════════════════
+let camTX=0, camTZ=ZOOM_DEF;
+let bothHands=false;
+let attraction=0; // 0..1 — kéo 2 cầu lại gần
 
 function animate() {
   requestAnimationFrame(animate);
-  const t=Date.now()*0.00040;
-  const connected=!!(otherState&&otherState.online);
-  const oIsHand=connected&&otherState.isHand;
-  const oRotX=connected?(otherState.rotX||0):0;
-  const oRotY=connected?(otherState.rotY||0):0;
-  const revealed=isHand&&zoom<ZOOM_REVEAL;
+  const t=Date.now()*.00040;
+  const connected=!!(other&&other.online);
+  const oHand=connected&&other.isHand;
+  const oRotX=oHand?(other.rotX||0):0;
+  const oRotY=oHand?(other.rotY||0):0;
+  const oPinch=connected?(other.pinchDist||.15):.15;
 
-  // Cầu A (mình)
-  updateGlobe(globeA, CORE_COUNT, isHand, isHand?rotX:0, isHand?rotY:0, 0, t, false);
+  // Hai cầu ở tâm đối xứng: A ở -d/2, B ở +d/2
+  const halfD = globeDistCur * .5;
+  const cxA   = connected ? -halfD : 0;
+  const cxB   =  halfD;
 
-  // Cầu B (người kia)
+  // Cầu A
+  tickGlobe(gA, CORE_N, isHand, isHand?rotX:0, isHand?rotY:0, cxA, t, 0);
+
+  // Cầu B
   if (connected) {
-    globeB.points.visible=true;
-    globeB.ring.visible=true;
-    updateGlobe(globeB, CORE_COUNT, oIsHand, oRotX, oRotY, OTHER_OFFSET, t, true);
+    gB.pts.visible=true; gB.ring.visible=true;
+    tickGlobe(gB, CORE_N, oHand, oRotX, oRotY, cxB, t, 99999);
+  } else {
+    gB.pts.visible=false; gB.ring.visible=false;
+  }
 
-    // Thread
+  // Attraction: cả 2 nhíu tay (pinch nhỏ) → kéo lại gần
+  bothHands = isHand && oHand;
+  const myPinch = pinchDist < .12;
+  const theirPinch = oPinch < .12;
+  const pulling = bothHands && myPinch && theirPinch;
+
+  // target distance: kéo từ 13 → 7 khi cả 2 nhíu
+  const targetDist = connected
+    ? (pulling ? 7.5 : (bothHands ? 10.5 : 13.0))
+    : 0;
+  globeDistCur = THREE.MathUtils.lerp(globeDistCur, targetDist, .025);
+
+  // Attraction factor 0..1 cho visual
+  attraction = THREE.MathUtils.lerp(
+    attraction,
+    connected ? THREE.MathUtils.mapLinear(globeDistCur,13,7.5,0,1) : 0,
+    .04
+  );
+
+  // Energy bar
+  const ebar = document.getElementById('energy-bar');
+  const efill= document.getElementById('energy-fill');
+  if (bothHands && connected) {
+    ebar.style.opacity='1';
+    efill.style.width = (attraction*100)+'%';
+  } else {
+    ebar.style.opacity='0';
+  }
+
+  // ── THREAD & STREAM ──
+  if (connected) {
+    const p0={x:cxA,y:0,z:0};
+    const p1={x:cxB,y:0,z:0};
+    const sag = THREE.MathUtils.lerp(2.5, 0.3, attraction); // võng ít hơn khi gần
+    const threadOpacity=THREE.MathUtils.lerp(.0,.75,
+      THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(globeDistCur,13,7.5,.3,1),0,1)
+    );
+
+    // Thread particles
     const tp=pThread.geometry.attributes.position.array;
-    const targetThreadOp=(isHand&&oIsHand)?0.85:0.35;
-    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,targetThreadOp,0.04);
-    for (let i=0;i<THREAD_COUNT;i++) {
-      const frac=i/THREAD_COUNT;
-      const phase=threadRnd[i*2];
-      const sag=Math.sin(frac*Math.PI)*0.9;
-      const wave=Math.sin(t*2.5+phase+frac*Math.PI*4)*0.15;
-      tp[i*3]  =frac*OTHER_OFFSET;
-      tp[i*3+1]=-sag+wave;
-      tp[i*3+2]=Math.cos(t*1.8+phase)*0.12;
+    for (let i=0;i<THREAD_N;i++) {
+      const f=i/THREAD_N;
+      const ph=threadR[i*2];
+      const c=catenary(f,p0,p1,sag);
+      // Rung nhẹ perpendicular
+      const wave=Math.sin(t*3+ph+f*Math.PI*6)*.12*(1-attraction*.5);
+      tp[i*3]  =c.x;
+      tp[i*3+1]=c.y+wave;
+      tp[i*3+2]=c.z+Math.cos(t*2+ph)*.08;
     }
     pThread.geometry.attributes.position.needsUpdate=true;
-    camTargetX=OTHER_OFFSET*0.5;
+    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,threadOpacity,.05);
+
+    // Stream particles — chạy từ A → B và B → A
+    const sp2=pStream.geometry.attributes.position.array;
+    const streamOpacity=bothHands
+      ? THREE.MathUtils.lerp(.4,.95,attraction)
+      : 0;
+    for (let i=0;i<STREAM_N;i++) {
+      streamT[i]+=streamSpd[i]*(1+attraction*2); // nhanh hơn khi kéo
+      if (streamT[i]>1) streamT[i]-=1;
+      const f=streamT[i];
+      const c=catenary(f,p0,p1,sag);
+      sp2[i*3]  =c.x;
+      sp2[i*3+1]=c.y;
+      sp2[i*3+2]=c.z;
+    }
+    pStream.geometry.attributes.position.needsUpdate=true;
+    pStream.material.opacity=THREE.MathUtils.lerp(pStream.material.opacity,streamOpacity,.05);
+    pStream.material.size=THREE.MathUtils.lerp(pStream.material.size,.08+attraction*.08,.04);
   } else {
-    globeB.points.visible=false;
-    globeB.ring.visible=false;
-    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,0,0.04);
-    camTargetX=0;
+    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,0,.05);
+    pStream.material.opacity=THREE.MathUtils.lerp(pStream.material.opacity,0,.05);
   }
 
   // photoGroup theo cầu A
-  photoGroup.rotation.x=globeA.points.rotation.x;
-  photoGroup.rotation.y=globeA.points.rotation.y;
+  photoGroup.rotation.x=gA.pts.rotation.x;
+  photoGroup.rotation.y=gA.pts.rotation.y;
+  photoGroup.position.x=THREE.MathUtils.lerp(photoGroup.position.x,cxA,.06);
 
-  // Camera
-  const targetZ=connected?zoom+5:zoom;
-  camera.position.z=THREE.MathUtils.lerp(camera.position.z,targetZ,0.05);
-  camera.position.x=THREE.MathUtils.lerp(camera.position.x,camTargetX,0.04);
+  // Camera — zoom ra khi connected để thấy cả 2
+  const targetZ = connected
+    ? Math.max(zoom+4, globeDistCur*1.1+8)
+    : zoom;
+  camera.position.z=THREE.MathUtils.lerp(camera.position.z,targetZ,.05);
+  camera.position.x=THREE.MathUtils.lerp(camera.position.x, connected?0:0, .04);
 
   // Sprites
   const zf=THREE.MathUtils.clamp(
     THREE.MathUtils.mapLinear(zoom,ZOOM_REVEAL,ZOOM_SHOW,0,1),0,1
   );
-  const baseOp=isHand?zf*zf*(3-2*zf)*0.82:0;
+  const baseOp=isHand?zf*zf*(3-2*zf)*.80:0;
   sprites.forEach(sp=>{
-    if (!sp) return;
-    const shimmer=baseOp>0.05?Math.sin(t*0.9+sp.userData.phase)*0.06:0;
+    if(!sp)return;
+    const shimmer=baseOp>.05?Math.sin(t*.9+sp.userData.phase)*.055:0;
     sp.material.opacity=THREE.MathUtils.lerp(
       sp.material.opacity,
-      THREE.MathUtils.clamp(baseOp+shimmer,0,1),
-      0.04
+      THREE.MathUtils.clamp(baseOp+shimmer,0,1),.04
     );
     sp.material.needsUpdate=true;
   });
 
-  // Bloom
-  bloom.strength=THREE.MathUtils.lerp(
-    bloom.strength,
-    THREE.MathUtils.mapLinear(THREE.MathUtils.clamp(zoom,ZOOM_SHOW,ZOOM_DEF),ZOOM_SHOW,ZOOM_DEF,0.6,2.8),
-    0.04
-  );
+  // Bloom — thêm chút glow khi attraction cao
+  const targetBloom=THREE.MathUtils.mapLinear(
+    THREE.MathUtils.clamp(zoom,ZOOM_SHOW,ZOOM_DEF),ZOOM_SHOW,ZOOM_DEF,.6,2.6
+  ) + attraction*.8;
+  bloom.strength=THREE.MathUtils.lerp(bloom.strength,targetBloom,.04);
 
-  if (isHand) {
+  if(isHand){
     const intro=document.getElementById('intro');
-    if (intro) intro.style.opacity='0';
+    if(intro)intro.style.opacity='0';
   }
 
   composer.render();
@@ -653,6 +707,10 @@ window.addEventListener('resize',()=>{
   composer.setSize(innerWidth,innerHeight);
   bloom.resolution.set(innerWidth,innerHeight);
 });
+
+// Publish initial
+publish({isHand:false,rotX:0,rotY:0,zoom:ZOOM_DEF,pinchDist:.15});
 </script>
+
 </body>
 </html>

@@ -14,7 +14,7 @@ video  { display:none; }
   position:fixed; inset:0; z-index:50;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
-  pointer-events:none;
+  pointer-events:none; transition:opacity 1.5s;
 }
 #intro h1 {
   font-family:'Georgia',serif; font-weight:normal;
@@ -49,6 +49,43 @@ video  { display:none; }
   font-family:'Georgia',serif; font-size:11px;
   letter-spacing:3px; color:rgba(255,210,100,0.45);
 }
+
+/* ── CONNECT STATUS ── */
+#connect-status {
+  position:fixed; top:18px; left:50%; transform:translateX(-50%);
+  z-index:100; pointer-events:none;
+  display:flex; align-items:center; gap:8px;
+  opacity:0; transition:opacity 0.8s;
+}
+#connect-status.show { opacity:1; }
+#connect-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:rgba(100,100,100,0.5);
+  transition:background 0.6s, box-shadow 0.6s;
+}
+#connect-dot.online {
+  background:rgba(120,255,180,0.9);
+  box-shadow:0 0 8px rgba(100,255,160,0.6);
+  animation:heartbeat 1.8s ease-in-out infinite;
+}
+@keyframes heartbeat {
+  0%,100%{transform:scale(1)} 50%{transform:scale(1.35)}
+}
+#connect-label {
+  font-family:'Georgia',serif; font-size:11px;
+  letter-spacing:2px; color:rgba(200,200,200,0.4);
+  transition:color 0.6s;
+}
+#connect-label.online { color:rgba(120,255,180,0.7); }
+
+/* ── ROLE BADGE ── */
+#role-badge {
+  position:fixed; top:18px; right:18px; z-index:100;
+  font-family:'Georgia',serif; font-size:10px;
+  letter-spacing:2px; text-transform:uppercase;
+  color:rgba(255,210,100,0.35);
+  pointer-events:none;
+}
 </style>
 </head>
 <body>
@@ -65,24 +102,104 @@ video  { display:none; }
   <span id="hud-txt">Đưa tay vào khung hình</span>
 </div>
 
-<!-- ══════════════════════════════
+<div id="connect-status">
+  <div id="connect-dot"></div>
+  <span id="connect-label">Chờ kết nối...</span>
+</div>
+
+<div id="role-badge" id="role-badge"></div>
+
+<!-- ══════════════════════════════════════
      ✦  THÊM ẢNH Ở ĐÂY
-     Dán URL ImgBB vào url
-     Tối đa 15 ảnh
-════════════════════════════════ -->
+     Dán URL ImgBB vào url, tối đa 15 ảnh
+════════════════════════════════════════ -->
 <script>
 const PHOTOS = [
-  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau',     date:'14.02.2022' },
-  { url:'https://picsum.photos/seed/b2/600/450', name:'Cà phê sáng hôm ấy',   date:'20.03.2022' },
-  { url:'https://picsum.photos/seed/c3/600/450', name:'Sinh nhật em',           date:'05.07.2022' },
-  { url:'https://picsum.photos/seed/d4/600/450', name:'Chuyến đi Đà Lạt',      date:'10.09.2022' },
-  { url:'https://picsum.photos/seed/e5/600/450', name:'Mưa hôm ấy',             date:'03.11.2022' },
-  { url:'https://picsum.photos/seed/f6/600/450', name:'Giáng sinh đầu tiên',    date:'25.12.2022' },
-  { url:'https://picsum.photos/seed/g7/600/450', name:'Tết bên nhau',            date:'22.01.2023' },
-  { url:'https://picsum.photos/seed/h8/600/450', name:'Buổi chiều ở biển',      date:'15.04.2023' },
+  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau',    date:'14.02.2022' },
+  { url:'https://picsum.photos/seed/b2/600/450', name:'Cà phê sáng hôm ấy',  date:'20.03.2022' },
+  { url:'https://picsum.photos/seed/c3/600/450', name:'Sinh nhật em',          date:'05.07.2022' },
+  { url:'https://picsum.photos/seed/d4/600/450', name:'Chuyến đi Đà Lạt',     date:'10.09.2022' },
+  { url:'https://picsum.photos/seed/e5/600/450', name:'Mưa hôm ấy',            date:'03.11.2022' },
+  { url:'https://picsum.photos/seed/f6/600/450', name:'Giáng sinh đầu tiên',   date:'25.12.2022' },
+  { url:'https://picsum.photos/seed/g7/600/450', name:'Tết bên nhau',           date:'22.01.2023' },
+  { url:'https://picsum.photos/seed/h8/600/450', name:'Buổi chiều ở biển',     date:'15.04.2023' },
 ];
 </script>
 
+<!-- Firebase -->
+<script type="module">
+import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyA8pALgEfE16ffDxR1QEGe39iyvvX-TnTk",
+  authDomain:        "memory-planet-connect.firebaseapp.com",
+  databaseURL:       "https://memory-planet-connect-default-rtdb.firebaseio.com",
+  projectId:         "memory-planet-connect",
+  storageBucket:     "memory-planet-connect.firebasestorage.app",
+  messagingSenderId: "874183226734",
+  appId:             "1:874183226734:web:c504aaff3206a9ca0d7d7f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ── Xác định vai: "A" (người vào trước) hoặc "B" ──
+// Dùng sessionStorage để giữ role trong tab
+let myRole = sessionStorage.getItem('mp_role');
+if (!myRole) {
+  // Kiểm tra slot A còn trống không
+  const slotARef = ref(db, 'planets/A/online');
+  // Gán role ngay, kiểm tra sau
+  myRole = 'A'; // mặc định thử A trước
+  sessionStorage.setItem('mp_role', myRole);
+}
+
+const myRef    = ref(db, `planets/${myRole}`);
+const otherRole = myRole === 'A' ? 'B' : 'A';
+const otherRef = ref(db, `planets/${otherRole}`);
+
+// Ghi trạng thái online của mình
+function publishState(data) {
+  set(myRef, { ...data, online: true, ts: Date.now() });
+}
+
+// Khi tab đóng → tự xóa
+onDisconnect(myRef).set({ online: false });
+
+// Expose để Three.js dùng
+window._firebase = { publishState, otherRef, myRole };
+
+// Cập nhật UI role
+document.getElementById('role-badge').textContent =
+  myRole === 'A' ? '✦ Người yêu' : '✦ Của tôi';
+
+// Listen other device
+let otherState = null;
+onValue(otherRef, snap => {
+  const data = snap.val();
+  otherState = (data && data.online) ? data : null;
+  window._otherState = otherState;
+
+  const dot   = document.getElementById('connect-dot');
+  const label = document.getElementById('connect-label');
+  const status = document.getElementById('connect-status');
+  status.classList.add('show');
+
+  if (otherState) {
+    dot.classList.add('online');
+    label.classList.add('online');
+    label.textContent = myRole === 'A' ? '✦ Người yêu đang online' : '✦ Của tôi đang online';
+  } else {
+    dot.classList.remove('online');
+    label.classList.remove('online');
+    label.textContent = 'Chờ người kia kết nối...';
+  }
+});
+</script>
+
+<!-- Three.js + MediaPipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script type="importmap">
@@ -104,21 +221,25 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 // CONSTANTS
 // ─────────────────────────────────────────
 const GLOBE_R     = 4.8;
-const CORE_COUNT  = 20000;
-const RING_COUNT  = 9000;
+const CORE_COUNT  = 18000;
+const RING_COUNT  = 8000;
 const RING_TILT   = 0.24;
-const ZOOM_REVEAL = 9.5;   // dưới mức này ảnh bắt đầu hiện
-const ZOOM_SHOW   = 7.5;   // dưới mức này ảnh hiện rõ hoàn toàn
+const ZOOM_REVEAL = 9.5;
+const ZOOM_SHOW   = 7.5;
 const ZOOM_DEF    = 15.5;
 
+// Số hạt dây nối giữa 2 địa cầu
+const THREAD_COUNT = 3000;
+
 // ─────────────────────────────────────────
-// SCENE SETUP
+// SCENE
 // ─────────────────────────────────────────
-const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 1000);
+const scene       = new THREE.Scene();
+const scenePhotos = new THREE.Scene();
+const camera      = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 1000);
 camera.position.z = ZOOM_DEF;
 
-const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
@@ -126,15 +247,12 @@ document.body.appendChild(renderer.domElement);
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(
-  new THREE.Vector2(innerWidth, innerHeight),
-  2.8,   // strength
-  0.5,   // radius
-  0.06   // threshold
+  new THREE.Vector2(innerWidth, innerHeight), 2.8, 0.5, 0.06
 );
 composer.addPass(bloom);
 
 // ─────────────────────────────────────────
-// PARTICLE TEXTURE
+// TEXTURES
 // ─────────────────────────────────────────
 function glowTex(size, r, g, b) {
   const cv = document.createElement('canvas');
@@ -146,15 +264,15 @@ function glowTex(size, r, g, b) {
   grd.addColorStop(0.4,  `rgba(${r},${g},${b},0.35)`);
   grd.addColorStop(0.7,  `rgba(${r},${g},${b},0.08)`);
   grd.addColorStop(1,    'rgba(0,0,0,0)');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = grd; ctx.fillRect(0,0,size,size);
   return new THREE.CanvasTexture(cv);
 }
-const texCore = glowTex(64, 255, 245, 205);
-const texRing = glowTex(32, 210, 225, 255);
+const texCore   = glowTex(64, 255, 245, 205);
+const texRing   = glowTex(32, 210, 225, 255);
+const texThread = glowTex(16, 255, 200, 120);  // hạt dây nối: vàng cam
 
 // ─────────────────────────────────────────
-// CORE PARTICLES
+// MY GLOBE — core particles
 // ─────────────────────────────────────────
 const geoCore  = new THREE.BufferGeometry();
 const corePos  = new Float32Array(CORE_COUNT * 3);
@@ -168,11 +286,9 @@ for (let i = 0; i < CORE_COUNT; i++) {
   coreBase[i*3]   = r * Math.sin(phi)*Math.cos(theta);
   coreBase[i*3+1] = r * Math.sin(phi)*Math.sin(theta);
   coreBase[i*3+2] = r * Math.cos(phi);
-
   corePos[i*3]   = (Math.random()-.5)*22;
   corePos[i*3+1] = (Math.random()-.5)*22;
   corePos[i*3+2] = (Math.random()-.5)*22;
-
   coreRnd[i*4]   = Math.random()*0.25+0.07;
   coreRnd[i*4+1] = Math.random()*Math.PI*2;
   coreRnd[i*4+2] = Math.random()*Math.PI*2;
@@ -186,7 +302,7 @@ const pCore = new THREE.Points(geoCore, new THREE.PointsMaterial({
 scene.add(pCore);
 
 // ─────────────────────────────────────────
-// RING PARTICLES
+// MY GLOBE — ring particles
 // ─────────────────────────────────────────
 const geoRing  = new THREE.BufferGeometry();
 const ringPos  = new Float32Array(RING_COUNT * 3);
@@ -197,13 +313,11 @@ for (let i = 0; i < RING_COUNT; i++) {
   const angle = Math.random()*Math.PI*2;
   const u = Math.random();
   const r = 6.8 + u*u*5.2;
-  const px = Math.cos(angle)*r;
-  const pz = Math.sin(angle)*r;
+  const px = Math.cos(angle)*r, pz = Math.sin(angle)*r;
   const py = (Math.random()-.5)*0.07;
   ringBase[i*3]   = px;
   ringBase[i*3+1] = py - pz*Math.sin(RING_TILT)*0.14;
   ringBase[i*3+2] = pz*Math.cos(RING_TILT*0.14);
-
   ringPos[i*3]   = (Math.random()-.5)*24;
   ringPos[i*3+1] = (Math.random()-.5)*10;
   ringPos[i*3+2] = (Math.random()-.5)*24;
@@ -219,12 +333,95 @@ const pRing = new THREE.Points(geoRing, new THREE.PointsMaterial({
 scene.add(pRing);
 
 // ─────────────────────────────────────────
-// PHOTO CARDS — dán lên Group, xoay cùng địa cầu
+// OTHER GLOBE — địa cầu của người kia
+// Offset sang phải trong không gian 3D
 // ─────────────────────────────────────────
-// Group này xoay cùng pCore để ảnh "dính" trên cầu
-const photoGroup = new THREE.Group();
-scene.add(photoGroup);
+const OTHER_OFFSET_X = 14; // khoảng cách 2 cầu
 
+const geoCoreB  = new THREE.BufferGeometry();
+const corePosB  = new Float32Array(CORE_COUNT * 3);
+const coreBaseB = new Float32Array(CORE_COUNT * 3);
+
+for (let i = 0; i < CORE_COUNT; i++) {
+  const phi   = Math.acos(-1 + (2*i)/CORE_COUNT);
+  const theta = Math.sqrt(CORE_COUNT * Math.PI) * phi;
+  const r     = GLOBE_R + Math.random() * 0.6;
+  coreBaseB[i*3]   = r * Math.sin(phi)*Math.cos(theta) + OTHER_OFFSET_X;
+  coreBaseB[i*3+1] = r * Math.sin(phi)*Math.sin(theta);
+  coreBaseB[i*3+2] = r * Math.cos(phi);
+  corePosB[i*3]   = (Math.random()-.5)*22 + OTHER_OFFSET_X;
+  corePosB[i*3+1] = (Math.random()-.5)*22;
+  corePosB[i*3+2] = (Math.random()-.5)*22;
+}
+geoCoreB.setAttribute('position', new THREE.BufferAttribute(corePosB, 3));
+
+// Màu khác biệt: hồng tím cho người kia
+const pCoreB = new THREE.Points(geoCoreB, new THREE.PointsMaterial({
+  size:0.14, map:texCore, transparent:true,
+  blending:THREE.AdditiveBlending, depthWrite:false,
+  color:0xffccee  // hồng nhẹ
+}));
+pCoreB.visible = false; // ẩn cho đến khi có kết nối
+scene.add(pCoreB);
+
+const geoRingB  = new THREE.BufferGeometry();
+const ringPosB  = new Float32Array(RING_COUNT * 3);
+const ringBaseB = new Float32Array(RING_COUNT * 3);
+const ringRndB  = new Float32Array(RING_COUNT * 3);
+
+for (let i = 0; i < RING_COUNT; i++) {
+  const angle = Math.random()*Math.PI*2;
+  const u = Math.random();
+  const r = 6.8 + u*u*5.2;
+  const px = Math.cos(angle)*r, pz = Math.sin(angle)*r;
+  const py = (Math.random()-.5)*0.07;
+  ringBaseB[i*3]   = px + OTHER_OFFSET_X;
+  ringBaseB[i*3+1] = py - pz*Math.sin(RING_TILT)*0.14;
+  ringBaseB[i*3+2] = pz*Math.cos(RING_TILT*0.14);
+  ringPosB[i*3]   = (Math.random()-.5)*24 + OTHER_OFFSET_X;
+  ringPosB[i*3+1] = (Math.random()-.5)*10;
+  ringPosB[i*3+2] = (Math.random()-.5)*24;
+  ringRndB[i*3]   = Math.random()*0.17+0.04;
+  ringRndB[i*3+1] = Math.random()*Math.PI*2;
+  ringRndB[i*3+2] = Math.random();
+}
+geoRingB.setAttribute('position', new THREE.BufferAttribute(ringPosB, 3));
+const pRingB = new THREE.Points(geoRingB, new THREE.PointsMaterial({
+  size:0.08, map:texRing, transparent:true,
+  blending:THREE.AdditiveBlending, depthWrite:false, color:0xffddff
+}));
+pRingB.visible = false;
+scene.add(pRingB);
+
+// ─────────────────────────────────────────
+// THREAD — dây hạt nối 2 cầu
+// ─────────────────────────────────────────
+const geoThread = new THREE.BufferGeometry();
+const threadPos = new Float32Array(THREAD_COUNT * 3);
+const threadRnd = new Float32Array(THREAD_COUNT * 2);
+
+for (let i = 0; i < THREAD_COUNT; i++) {
+  const t = i / THREAD_COUNT;
+  // Phân bố dọc đường nối từ cầu A → cầu B
+  threadPos[i*3]   = t * OTHER_OFFSET_X;
+  threadPos[i*3+1] = (Math.random()-.5) * 0.5;
+  threadPos[i*3+2] = (Math.random()-.5) * 0.5;
+  threadRnd[i*2]   = Math.random()*Math.PI*2; // phase
+  threadRnd[i*2+1] = Math.random();
+}
+geoThread.setAttribute('position', new THREE.BufferAttribute(threadPos, 3));
+const pThread = new THREE.Points(geoThread, new THREE.PointsMaterial({
+  size:0.07, map:texThread, transparent:true,
+  blending:THREE.AdditiveBlending, depthWrite:false,
+  color:0xffcc88, opacity:0
+}));
+scene.add(pThread);
+
+// ─────────────────────────────────────────
+// PHOTO CARDS
+// ─────────────────────────────────────────
+const photoGroup = new THREE.Group();
+scenePhotos.add(photoGroup);
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -238,249 +435,308 @@ function roundRect(ctx, x, y, w, h, r) {
 
 function makeCard(photo, idx, total) {
   const W=300, H=225, PAD=14, FOOT=68;
-  const cw = W+PAD*2, ch = H+PAD+FOOT;
+  const cw=W+PAD*2, ch=H+PAD+FOOT;
   const cv = document.createElement('canvas');
-  cv.width = cw; cv.height = ch;
+  cv.width=cw; cv.height=ch;
   const ctx = cv.getContext('2d');
 
-  // Nền card
-  ctx.fillStyle = 'rgba(6,4,1,0.78)';
+  ctx.fillStyle='rgba(6,4,1,0.78)';
   roundRect(ctx,0,0,cw,ch,12); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,205,70,0.45)';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle='rgba(255,205,70,0.45)';
+  ctx.lineWidth=1;
   roundRect(ctx,0,0,cw,ch,12); ctx.stroke();
-
-  // Placeholder màu nếu chưa load ảnh
-  ctx.fillStyle = 'rgba(40,30,10,0.5)';
+  ctx.fillStyle='rgba(40,30,10,0.5)';
   roundRect(ctx,PAD,PAD,W,H,7); ctx.fill();
-
-  // Tên
-  ctx.fillStyle = 'rgba(255,235,175,0.92)';
-  ctx.font = '17px Georgia';
-  ctx.textAlign = 'center';
+  ctx.fillStyle='rgba(255,235,175,0.92)';
+  ctx.font='17px Georgia'; ctx.textAlign='center';
   ctx.fillText(photo.name||'', cw/2, H+PAD+30);
-
-  // Ngày
-  ctx.fillStyle = 'rgba(255,185,60,0.42)';
-  ctx.font = '12px Georgia';
+  ctx.fillStyle='rgba(255,185,60,0.42)';
+  ctx.font='12px Georgia';
   ctx.fillText(photo.date||'', cw/2, H+PAD+52);
 
   const tex = new THREE.CanvasTexture(cv);
-
-  // Tạo sprite dùng tex placeholder trước
   const mat = new THREE.SpriteMaterial({
-    map: tex, transparent: true, opacity: 0,
-    blending: THREE.NormalBlending, depthWrite: false,
-    sizeAttenuation: true
+    map:tex, transparent:true, opacity:0,
+    blending:THREE.NormalBlending, depthWrite:false,
+    sizeAttenuation:true, depthTest:false
   });
   const sp = new THREE.Sprite(mat);
   const sc = 3.0;
-  sp.scale.set(sc * cw/H, sc, 1);
+  sp.scale.set(sc*cw/H, sc, 1);
 
-  // Vị trí cố định trên mặt cầu
   const phi_s   = Math.acos(1 - 2*(idx+0.5)/total);
   const theta_s = GOLDEN * idx;
   const rr      = GLOBE_R + 0.5;
   sp.position.set(
-    rr * Math.sin(phi_s)*Math.cos(theta_s),
-    rr * Math.sin(phi_s)*Math.sin(theta_s),
-    rr * Math.cos(phi_s)
+    rr*Math.sin(phi_s)*Math.cos(theta_s),
+    rr*Math.sin(phi_s)*Math.sin(theta_s),
+    rr*Math.cos(phi_s)
   );
   sp.userData = { phase: Math.random()*Math.PI*2 };
   photoGroup.add(sp);
 
-  // Load ảnh thật, vẽ lại canvas
   const img = new Image();
-  img.crossOrigin = 'anonymous';
+  img.crossOrigin='anonymous';
   img.onload = () => {
     ctx.save();
-    roundRect(ctx, PAD, PAD, W, H, 7);
-    ctx.clip();
-    ctx.drawImage(img, PAD, PAD, W, H);
+    roundRect(ctx,PAD,PAD,W,H,7); ctx.clip();
+    ctx.drawImage(img,PAD,PAD,W,H);
     ctx.restore();
-    // Vẽ lại text lên trên ảnh (vì bị clip đè)
-    ctx.fillStyle = 'rgba(255,235,175,0.92)';
-    ctx.font = '17px Georgia';
-    ctx.textAlign = 'center';
+    ctx.fillStyle='rgba(255,235,175,0.92)';
+    ctx.font='17px Georgia'; ctx.textAlign='center';
     ctx.fillText(photo.name||'', cw/2, H+PAD+30);
-    ctx.fillStyle = 'rgba(255,185,60,0.42)';
-    ctx.font = '12px Georgia';
+    ctx.fillStyle='rgba(255,185,60,0.42)';
+    ctx.font='12px Georgia';
     ctx.fillText(photo.date||'', cw/2, H+PAD+52);
-    tex.needsUpdate = true;
+    tex.needsUpdate=true;
   };
-  img.onerror = () => {}; // giữ placeholder
-  img.src = photo.url;
-
+  img.src=photo.url;
   return sp;
 }
 
-const sprites = PHOTOS.map((p,i) => makeCard(p, i, PHOTOS.length));
+const sprites = PHOTOS.map((p,i) => makeCard(p,i,PHOTOS.length));
 
 // ─────────────────────────────────────────
 // HAND TRACKING
 // ─────────────────────────────────────────
 const videoEl = document.getElementById('input_video');
 let rotX=0, rotY=0, zoom=ZOOM_DEF, isHand=false;
+let lastPublish=0;
 
-const handsMP = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+const handsMP = new Hands({ locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
 handsMP.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.6 });
 handsMP.onResults(res => {
   const txt = document.getElementById('hud-txt');
   if (res.multiHandLandmarks?.length > 0) {
-    isHand = true;
-    const lm = res.multiHandLandmarks[0];
-    rotY = (lm[9].x - 0.5) * Math.PI * 1.4;
-    rotX = (lm[9].y - 0.5) * Math.PI * 0.85;
-    const d = Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y);
-    // Zoom tối đa 7.0 — đủ thấy ảnh, không bị quá sâu
-    zoom = THREE.MathUtils.clamp(
-      THREE.MathUtils.mapLinear(d, 0.05, 0.26, 17, 7.0), 7.0, 17
+    isHand=true;
+    const lm=res.multiHandLandmarks[0];
+    rotY=(lm[9].x-0.5)*Math.PI*1.4;
+    rotX=(lm[9].y-0.5)*Math.PI*0.85;
+    const d=Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y);
+    zoom=THREE.MathUtils.clamp(
+      THREE.MathUtils.mapLinear(d,0.05,0.26,17,7.0),7.0,17
     );
-    txt.textContent = zoom < ZOOM_REVEAL ? '✦ Xoay tay để khám phá' : 'Nhíu ngón tay để zoom vào';
+    txt.textContent = zoom<ZOOM_REVEAL ? '✦ Xoay tay để khám phá' : 'Nhíu ngón tay để zoom vào';
+
+    // Publish lên Firebase mỗi 100ms
+    const now=Date.now();
+    if (now-lastPublish>100 && window._firebase) {
+      lastPublish=now;
+      window._firebase.publishState({
+        rotX, rotY, zoom,
+        isHand:true,
+        ts:now
+      });
+    }
   } else {
-    isHand = false;
-    rotX *= 0.96; rotY *= 0.96;
-    zoom = THREE.MathUtils.lerp(zoom, ZOOM_DEF, 0.03);
-    txt.textContent = 'Đưa tay vào khung hình';
+    isHand=false;
+    rotX*=0.96; rotY*=0.96;
+    zoom=THREE.MathUtils.lerp(zoom,ZOOM_DEF,0.03);
+    txt.textContent='Đưa tay vào khung hình';
+    if (window._firebase) {
+      window._firebase.publishState({ isHand:false, zoom:ZOOM_DEF, ts:Date.now() });
+    }
   }
 });
 
 new Camera(videoEl, {
-  onFrame: async () => await handsMP.send({ image: videoEl }),
+  onFrame: async()=>await handsMP.send({image:videoEl}),
   width:640, height:480
 }).start();
 
-// scroll fallback
-window.addEventListener('wheel', e => {
-  zoom = THREE.MathUtils.clamp(zoom + e.deltaY * 0.012, 7.0, 20);
-}, { passive:true });
+window.addEventListener('wheel', e=>{
+  zoom=THREE.MathUtils.clamp(zoom+e.deltaY*0.012,7.0,20);
+},{passive:true});
 
 // ─────────────────────────────────────────
-// OSCILLATION helper
+// OSCILLATION
 // ─────────────────────────────────────────
-function osc(i, t, amp) {
-  return Math.sin(t*1.1  + i*0.00831)*amp
-       + Math.cos(t*0.73 + i*0.01543)*amp*0.45;
+function osc(i,t,amp) {
+  return Math.sin(t*1.1+i*0.00831)*amp
+       + Math.cos(t*0.73+i*0.01543)*amp*0.45;
 }
+
+// ─────────────────────────────────────────
+// CAMERA: zoom out đủ để thấy cả 2 cầu khi connected
+// ─────────────────────────────────────────
+// My globe luôn ở gốc tọa độ
+// Camera pan sang phải một chút khi cả 2 online
+let camTargetX = 0;
 
 // ─────────────────────────────────────────
 // ANIMATION LOOP
 // ─────────────────────────────────────────
 function animate() {
   requestAnimationFrame(animate);
-  const t        = Date.now() * 0.00040;
-  const revealed = isHand && zoom < ZOOM_REVEAL;
+  const t        = Date.now()*0.00040;
+  const other    = window._otherState;
+  const connected = !!(other && other.online);
+  const revealed  = isHand && zoom<ZOOM_REVEAL;
 
-  // ── Core particles ──
-  const cp = pCore.geometry.attributes.position.array;
-  for (let i = 0; i < CORE_COUNT; i++) {
-    const spd=coreRnd[i*4], o1=coreRnd[i*4+1], o2=coreRnd[i*4+2];
-    let tx, ty, tz;
+  // ── My core ──
+  const cp=pCore.geometry.attributes.position.array;
+  for (let i=0;i<CORE_COUNT;i++) {
+    const spd=coreRnd[i*4],o1=coreRnd[i*4+1],o2=coreRnd[i*4+2];
+    let tx,ty,tz;
     if (isHand) {
-      const b = osc(i, t, 0.065);
-      tx = coreBase[i*3]  +b;   ty = coreBase[i*3+1]+b*0.7;  tz = coreBase[i*3+2]+b;
+      const b=osc(i,t,0.065);
+      tx=coreBase[i*3]+b; ty=coreBase[i*3+1]+b*0.7; tz=coreBase[i*3+2]+b;
     } else {
-      const r = 10 + Math.sin(t*spd*0.38+o2)*3.2;
-      tx = Math.sin(t*spd      +o1     )*r;
-      ty = Math.cos(t*spd*0.58 +o2     )*r*0.68;
-      tz = Math.sin(t*spd*0.82 +o1+1.3 )*r;
+      const r=10+Math.sin(t*spd*0.38+o2)*3.2;
+      tx=Math.sin(t*spd+o1)*r;
+      ty=Math.cos(t*spd*0.58+o2)*r*0.68;
+      tz=Math.sin(t*spd*0.82+o1+1.3)*r;
     }
-    const ls = isHand ? 0.020 : 0.015;
-    cp[i*3]  +=(tx-cp[i*3]  )*ls;
+    const ls=isHand?0.020:0.015;
+    cp[i*3]+=(tx-cp[i*3])*ls;
     cp[i*3+1]+=(ty-cp[i*3+1])*ls;
     cp[i*3+2]+=(tz-cp[i*3+2])*ls;
   }
-  pCore.geometry.attributes.position.needsUpdate = true;
+  pCore.geometry.attributes.position.needsUpdate=true;
 
-  // ── Ring particles ──
-  const rp = pRing.geometry.attributes.position.array;
-  for (let i = 0; i < RING_COUNT; i++) {
-    const spd=ringRnd[i*3], o1=ringRnd[i*3+1];
-    let tx, ty, tz;
+  // ── My ring ──
+  const rp=pRing.geometry.attributes.position.array;
+  for (let i=0;i<RING_COUNT;i++) {
+    const spd=ringRnd[i*3],o1=ringRnd[i*3+1];
+    let tx,ty,tz;
     if (isHand) {
-      const b = osc(i+40000, t, 0.03);
-      tx = ringBase[i*3]+b;  ty = ringBase[i*3+1]+b*0.2;  tz = ringBase[i*3+2]+b;
+      const b=osc(i+40000,t,0.03);
+      tx=ringBase[i*3]+b; ty=ringBase[i*3+1]+b*0.2; tz=ringBase[i*3+2]+b;
     } else {
-      const r2 = 12+Math.sin(t*spd*0.28+o1)*3.8;
-      tx = Math.cos(t*spd*0.48+o1    )*r2;
-      ty = Math.sin(t*spd*0.33+o1+0.8)*r2*0.28;
-      tz = Math.sin(t*spd*0.62+o1    )*r2;
+      const r2=12+Math.sin(t*spd*0.28+o1)*3.8;
+      tx=Math.cos(t*spd*0.48+o1)*r2;
+      ty=Math.sin(t*spd*0.33+o1+0.8)*r2*0.28;
+      tz=Math.sin(t*spd*0.62+o1)*r2;
     }
-    const lr = isHand ? 0.016 : 0.012;
-    rp[i*3]  +=(tx-rp[i*3]  )*lr;
+    const lr=isHand?0.016:0.012;
+    rp[i*3]+=(tx-rp[i*3])*lr;
     rp[i*3+1]+=(ty-rp[i*3+1])*lr;
     rp[i*3+2]+=(tz-rp[i*3+2])*lr;
   }
-  pRing.geometry.attributes.position.needsUpdate = true;
+  pRing.geometry.attributes.position.needsUpdate=true;
 
-  // ── Rotation — pCore, pRing, photoGroup xoay CÙNG NHAU ──
-  const tRX = isHand ? rotX : 0;
-  const tRY = isHand ? rotY : 0;
+  // ── Rotation my globe ──
+  const tRX=isHand?rotX:0;
+  const tRY=isHand?rotY:0;
+  pCore.rotation.x=THREE.MathUtils.lerp(pCore.rotation.x,tRX,0.04);
+  pCore.rotation.y=THREE.MathUtils.lerp(pCore.rotation.y,tRY,0.04);
+  pCore.rotation.y+=0.00085;
+  pRing.rotation.x=THREE.MathUtils.lerp(pRing.rotation.x,tRX+RING_TILT,0.04);
+  pRing.rotation.y=THREE.MathUtils.lerp(pRing.rotation.y,tRY,0.04);
+  pRing.rotation.y+=0.00055;
+  photoGroup.rotation.x=pCore.rotation.x;
+  photoGroup.rotation.y=pCore.rotation.y;
 
-  // Lerp rotation
-  const nextRX = THREE.MathUtils.lerp(pCore.rotation.x, tRX,         0.04);
-  const nextRY = THREE.MathUtils.lerp(pCore.rotation.y, tRY + pCore.rotation.y * 0, 0.04);
+  // ── Other globe (từ Firebase) ──
+  if (connected) {
+    pCoreB.visible=true;
+    pRingB.visible=true;
 
-  pCore.rotation.x = nextRX;
-  pCore.rotation.y = THREE.MathUtils.lerp(pCore.rotation.y, tRY, 0.04);
-  pCore.rotation.y += 0.00085; // tự xoay
+    const oRotX=other.rotX||0;
+    const oRotY=other.rotY||0;
+    const oIsHand=other.isHand||false;
 
-  // Vành đai xoay cùng nhưng thêm tilt
-  pRing.rotation.x = THREE.MathUtils.lerp(pRing.rotation.x, tRX+RING_TILT, 0.04);
-  pRing.rotation.y = THREE.MathUtils.lerp(pRing.rotation.y, tRY, 0.04);
-  pRing.rotation.y += 0.00055;
+    // Cập nhật vị trí hạt cầu B
+    const cpB=pCoreB.geometry.attributes.position.array;
+    for (let i=0;i<CORE_COUNT;i++) {
+      let tx,ty,tz;
+      if (oIsHand) {
+        const b=osc(i+10000,t,0.065);
+        tx=coreBaseB[i*3]+b; ty=coreBaseB[i*3+1]+b*0.7; tz=coreBaseB[i*3+2]+b;
+      } else {
+        const spd=0.15+((i*0.000317)%0.2);
+        const o1=(i*0.00431)%(Math.PI*2);
+        const o2=(i*0.00713)%(Math.PI*2);
+        const r=10+Math.sin(t*spd*0.38+o2)*3.2;
+        tx=Math.sin(t*spd+o1)*r + OTHER_OFFSET_X;
+        ty=Math.cos(t*spd*0.58+o2)*r*0.68;
+        tz=Math.sin(t*spd*0.82+o1+1.3)*r;
+      }
+      const ls=oIsHand?0.020:0.015;
+      cpB[i*3]+=(tx-cpB[i*3])*ls;
+      cpB[i*3+1]+=(ty-cpB[i*3+1])*ls;
+      cpB[i*3+2]+=(tz-cpB[i*3+2])*ls;
+    }
+    pCoreB.geometry.attributes.position.needsUpdate=true;
 
-  // photoGroup xoay chính xác như pCore — ảnh dính trên cầu
-  photoGroup.rotation.x = pCore.rotation.x;
-  photoGroup.rotation.y = pCore.rotation.y;
+    // Xoay cầu B theo dữ liệu của người kia
+    pCoreB.rotation.x=THREE.MathUtils.lerp(pCoreB.rotation.x,oRotX,0.04);
+    pCoreB.rotation.y=THREE.MathUtils.lerp(pCoreB.rotation.y,oRotY,0.04);
+    pCoreB.rotation.y+=0.00085;
+    pRingB.rotation.x=THREE.MathUtils.lerp(pRingB.rotation.x,oRotX+RING_TILT,0.04);
+    pRingB.rotation.y=THREE.MathUtils.lerp(pRingB.rotation.y,oRotY,0.04);
+    pRingB.rotation.y+=0.00055;
 
-  // ── Camera zoom ──
-  camera.position.z = THREE.MathUtils.lerp(camera.position.z, zoom, 0.05);
+    // ── Thread — dây hạt nối 2 cầu ──
+    const tp=pThread.geometry.attributes.position.array;
+    const threadOp=isHand&&oIsHand ? 0.9 : 0.45; // sáng hơn khi cả 2 có tay
+    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,threadOp,0.04);
 
-  // ── Sprites opacity: fade theo zoom ──
-  // Dùng smoothstep để fade mượt trong khoảng ZOOM_REVEAL → ZOOM_SHOW
-  const zoomFactor = THREE.MathUtils.clamp(
-    THREE.MathUtils.mapLinear(zoom, ZOOM_REVEAL, ZOOM_SHOW, 0, 1), 0, 1
+    for (let i=0;i<THREAD_COUNT;i++) {
+      const frac = i/THREAD_COUNT;
+      const phase=threadRnd[i*2];
+      // Đường cong catenary nhẹ giữa 2 cầu
+      const sag = Math.sin(frac*Math.PI) * 0.8; // võng xuống nhẹ
+      // Rung động nhẹ theo thời gian
+      const wave = Math.sin(t*2.5 + phase + frac*Math.PI*4)*0.15;
+      tp[i*3]   = frac * OTHER_OFFSET_X;
+      tp[i*3+1] = -sag + wave;
+      tp[i*3+2] = Math.cos(t*1.8+phase)*0.12;
+    }
+    pThread.geometry.attributes.position.needsUpdate=true;
+
+    // Camera pan để thấy cả 2 cầu
+    camTargetX=OTHER_OFFSET_X*0.5;
+  } else {
+    // Không có kết nối: ẩn cầu B và thread
+    pCoreB.visible=false;
+    pRingB.visible=false;
+    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,0,0.04);
+    camTargetX=0;
+  }
+
+  // ── Camera ──
+  camera.position.z=THREE.MathUtils.lerp(camera.position.z, connected?zoom+4:zoom, 0.05);
+  camera.position.x=THREE.MathUtils.lerp(camera.position.x, camTargetX, 0.04);
+
+  // ── Sprites opacity ──
+  const zoomFactor=THREE.MathUtils.clamp(
+    THREE.MathUtils.mapLinear(zoom,ZOOM_REVEAL,ZOOM_SHOW,0,1),0,1
   );
-  // Chỉ hiện khi có tay
-  const baseOp = isHand ? zoomFactor * zoomFactor * (3 - 2*zoomFactor) : 0; // smoothstep
-
-  sprites.forEach((sp, i) => {
+  const baseOp=isHand?zoomFactor*zoomFactor*(3-2*zoomFactor)*0.82:0;
+  sprites.forEach((sp,i)=>{
     if (!sp) return;
-    // Shimmer nhẹ khi hiện
-    const shimmer = baseOp > 0.05
-      ? Math.sin(t*0.9 + sp.userData.phase)*0.06
-      : 0;
-    const targetOp = THREE.MathUtils.clamp(baseOp + shimmer, 0, 1);
-    sp.material.opacity = THREE.MathUtils.lerp(sp.material.opacity, targetOp, 0.04);
-    sp.material.needsUpdate = true;
+    const shimmer=baseOp>0.05?Math.sin(t*0.9+sp.userData.phase)*0.06:0;
+    const targetOp=THREE.MathUtils.clamp(baseOp+shimmer,0,1);
+    sp.material.opacity=THREE.MathUtils.lerp(sp.material.opacity,targetOp,0.04);
+    sp.material.needsUpdate=true;
   });
 
-  // ── Bloom: giảm hẳn khi zoom vào để ảnh không bị chói ──
-  const targetBloom = THREE.MathUtils.mapLinear(
-    THREE.MathUtils.clamp(zoom, ZOOM_SHOW, ZOOM_DEF),
-    ZOOM_SHOW, ZOOM_DEF,
-    0.6,   // zoom vào: bloom rất nhẹ, ảnh rõ
-    2.8    // zoom xa: bloom rực
+  // ── Bloom ──
+  const targetBloom=THREE.MathUtils.mapLinear(
+    THREE.MathUtils.clamp(zoom,ZOOM_SHOW,ZOOM_DEF),
+    ZOOM_SHOW,ZOOM_DEF, 0.6, 2.8
   );
-  bloom.strength = THREE.MathUtils.lerp(bloom.strength, targetBloom, 0.04);
+  bloom.strength=THREE.MathUtils.lerp(bloom.strength,targetBloom,0.04);
 
-  // ── Fade intro khi có tay ──
   if (isHand) {
-    const intro = document.getElementById('intro');
-    if (intro) intro.style.opacity = '0';
+    const intro=document.getElementById('intro');
+    if (intro) intro.style.opacity='0';
   }
 
   composer.render();
+  renderer.autoClear=false;
+  renderer.render(scenePhotos,camera);
+  renderer.autoClear=true;
 }
 animate();
 
-window.addEventListener('resize', () => {
-  camera.aspect = innerWidth/innerHeight;
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-  composer.setSize(innerWidth, innerHeight);
-  bloom.resolution.set(innerWidth, innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
+  composer.setSize(innerWidth,innerHeight);
+  bloom.resolution.set(innerWidth,innerHeight);
 });
 </script>
 </body>

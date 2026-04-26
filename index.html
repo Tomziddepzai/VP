@@ -1,6 +1,753 @@
 <!DOCTYPE html>
 <html lang="vi">
+<head><!DOCTYPE html>
+<html lang="vi">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ Ký ức của chúng mình ✦</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; overflow:hidden; font-family:'Georgia',serif; }
+canvas { display:block; }
+video  { display:none; }
+
+#loading {
+  position:fixed; inset:0; z-index:500;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background:#000; transition:opacity 1s;
+}
+#loading p {
+  font-size:11px; letter-spacing:5px; text-transform:uppercase;
+  color:rgba(255,210,100,0.4);
+  animation:pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
+
+#intro {
+  position:fixed; inset:0; z-index:50;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  pointer-events:none; transition:opacity 2s;
+}
+#intro h1 {
+  font-weight:normal; font-size:clamp(18px,3vw,32px);
+  letter-spacing:7px; color:rgba(255,235,160,0);
+  animation:fadeIn 3s ease-out 0.6s forwards;
+}
+#intro p {
+  margin-top:12px; font-size:clamp(9px,1.4vw,12px);
+  letter-spacing:4px; text-transform:uppercase;
+  color:rgba(255,200,80,0);
+  animation:fadeIn 3s ease-out 1.6s forwards;
+}
+@keyframes fadeIn{to{color:rgba(255,235,160,0.6)}}
+
+#hud {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  z-index:100; pointer-events:none;
+  display:flex; align-items:center; gap:8px;
+  border:0.5px solid rgba(255,220,80,0.15);
+  border-radius:40px; padding:6px 18px;
+  opacity:0; animation:showEl 1s ease-out 5s forwards;
+}
+@keyframes showEl{to{opacity:1}}
+#hud .dot {
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,200,60,0.4);
+  animation:blink 2.5s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:.1}50%{opacity:.9}}
+#hud span{font-size:10px;letter-spacing:3px;color:rgba(255,210,100,0.4);}
+
+#conn {
+  position:fixed; top:18px; left:50%; transform:translateX(-50%);
+  z-index:100; pointer-events:none;
+  display:flex; align-items:center; gap:8px;
+  opacity:0; transition:opacity 0.8s;
+}
+#conn.show{opacity:1;}
+#conn-dot {
+  width:7px;height:7px;border-radius:50%;
+  background:rgba(80,80,80,0.4);
+  transition:all 0.8s;
+}
+#conn-dot.live{
+  background:rgba(100,255,160,0.95);
+  box-shadow:0 0 10px rgba(80,255,140,0.6);
+  animation:beat 2s ease-in-out infinite;
+}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+#conn-txt{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(180,180,180,0.3);transition:color 0.8s;
+}
+#conn-txt.live{color:rgba(100,255,160,0.6);}
+
+#role{
+  position:fixed;top:18px;right:18px;z-index:100;
+  font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,210,100,0.22);pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<video id="input_video" playsinline></video>
+<div id="loading"><p>Đang kết nối...</p></div>
+<div id="intro">
+  <h1>✦ Ký ức của chúng mình ✦</h1>
+  <p>Đưa tay · Nhíu ngón để khám phá</p>
+</div>
+<div id="hud"><div class="dot"></div><span id="hud-txt">Đưa tay vào khung hình</span></div>
+<div id="conn"><div id="conn-dot"></div><span id="conn-txt">Chờ kết nối...</span></div>
+<div id="role"></div>
+
+<!-- ══════════════════════════════════════════════
+     ✦  ẢNH CỦA NGƯỜI A  (máy vào trước)
+     Thay URL picsum bằng URL ImgBB thật
+════════════════════════════════════════════════ -->
+<script>
+const PHOTOS_A = [
+  { url:'https://picsum.photos/seed/a1/600/450', name:'Lần đầu gặp nhau',    date:'14.02.2022' },
+  { url:'https://picsum.photos/seed/a2/600/450', name:'Cà phê sáng hôm ấy',  date:'20.03.2022' },
+  { url:'https://picsum.photos/seed/a3/600/450', name:'Sinh nhật em',          date:'05.07.2022' },
+  { url:'https://picsum.photos/seed/a4/600/450', name:'Chuyến đi Đà Lạt',     date:'10.09.2022' },
+  { url:'https://picsum.photos/seed/a5/600/450', name:'Mưa hôm ấy',            date:'03.11.2022' },
+];
+
+// ══════════════════════════════════════════════
+//  ✦  ẢNH CỦA NGƯỜI B  (máy vào sau)
+// ══════════════════════════════════════════════
+const PHOTOS_B = [
+  { url:'https://picsum.photos/seed/b1/600/450', name:'Giáng sinh đầu tiên',  date:'25.12.2022' },
+  { url:'https://picsum.photos/seed/b2/600/450', name:'Tết bên nhau',           date:'22.01.2023' },
+  { url:'https://picsum.photos/seed/b3/600/450', name:'Buổi chiều ở biển',     date:'15.04.2023' },
+  { url:'https://picsum.photos/seed/b4/600/450', name:'Chuyến phượt đầu tiên', date:'02.06.2023' },
+  { url:'https://picsum.photos/seed/b5/600/450', name:'Kỷ niệm 1 năm',         date:'14.02.2023' },
+];
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import {
+  getDatabase, ref, set, onValue, onDisconnect, runTransaction
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+// ═══════════════════════════════════
+// FIREBASE + ROLE CLAIM
+// ═══════════════════════════════════
+const app = initializeApp({
+  apiKey:            "AIzaSyA8pALgEfE16ffDxR1QEGe39iyvvX-TnTk",
+  authDomain:        "memory-planet-connect.firebaseapp.com",
+  databaseURL:       "https://memory-planet-connect-default-rtdb.firebaseio.com",
+  projectId:         "memory-planet-connect",
+  storageBucket:     "memory-planet-connect.firebasestorage.app",
+  messagingSenderId: "874183226734",
+  appId:             "1:874183226734:web:c504aaff3206a9ca0d7d7f"
+});
+const db = getDatabase(app);
+
+let myRole = null;
+await new Promise(resolve => {
+  const attempt = () => {
+    runTransaction(ref(db,'slots'), cur => {
+      const s = cur || {A:false, B:false};
+      if (!s.A)      { s.A=true; myRole='A'; }
+      else if (!s.B) { s.B=true; myRole='B'; }
+      else return; // abort — cả 2 đang bận
+      return s;
+    }).then(r => {
+      if (r.committed) resolve();
+      else setTimeout(attempt, 800);
+    }).catch(() => { myRole=Math.random()<.5?'A':'B'; resolve(); });
+  };
+  attempt();
+});
+
+const myRef    = ref(db, `planets/${myRole}`);
+const otherRef = ref(db, `planets/${myRole==='A'?'B':'A'}`);
+onDisconnect(ref(db,`slots/${myRole}`)).set(false);
+onDisconnect(myRef).remove();
+
+// Throttled publish
+let _lp=0;
+function publish(data) {
+  const now=Date.now();
+  if(now-_lp<60)return; _lp=now;
+  set(myRef,{online:true,...data,ts:now});
+}
+
+// Ảnh của mình và người kia
+const MY_PHOTOS    = myRole==='A' ? PHOTOS_A : PHOTOS_B;
+const OTHER_PHOTOS = myRole==='A' ? PHOTOS_B : PHOTOS_A;
+const MY_COLOR     = myRole==='A' ? 0xfff5cc : 0xffcce8;
+const MY_RING_CLR  = myRole==='A' ? 0xddeeff : 0xffddf5;
+const MY_TEX_CLR   = myRole==='A' ? [255,245,205] : [255,200,215];
+
+// UI
+document.getElementById('loading').style.opacity='0';
+setTimeout(()=>document.getElementById('loading').style.display='none',1000);
+document.getElementById('role').textContent = myRole==='A' ? '✦ Người yêu' : '✦ Của tôi';
+document.getElementById('conn').classList.add('show');
+
+// Listen người kia
+let other = null;
+onValue(otherRef, snap => {
+  const d=snap.val();
+  other=(d&&d.online)?d:null;
+  const live=!!other;
+  document.getElementById('conn-dot').classList.toggle('live',live);
+  document.getElementById('conn-txt').classList.toggle('live',live);
+  document.getElementById('conn-txt').textContent = live
+    ? (myRole==='A'?'✦ Người yêu đang ở đây':'✦ Của tôi đang ở đây')
+    : 'Chờ người kia kết nối...';
+});
+
+// ═══════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════
+const GLOBE_R    = 4.5;
+const CORE_N     = 16000;
+const RING_N     = 7000;
+const RING_TILT  = 0.24;
+const THREAD_N   = 4000;
+const STREAM_N   = 600;
+const ZOOM_REVEAL= 9.5;
+const ZOOM_SHOW  = 7.5;
+const ZOOM_DEF   = 15.0;
+
+// Khi connected: cầu mình dịch sang bên mình
+// A → sang trái (-), B → sang phải (+)
+const MY_SIDE = myRole==='A' ? -1 : 1;
+const GLOBE_OFFSET_CONNECTED = 3.5; // dịch ra bao nhiêu khi connected
+
+// Thread chạy từ cầu ra mép màn hình
+// A: thread chạy sang phải, B: sang trái
+const THREAD_DIR = myRole==='A' ? 1 : -1;
+const THREAD_LEN = 18; // đủ dài để chạy ra mép
+
+// ═══════════════════════════════════
+// SCENE
+// ═══════════════════════════════════
+const scene       = new THREE.Scene();
+const scenePhotos = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.1, 1000);
+camera.position.z = ZOOM_DEF;
+
+const renderer = new THREE.WebGLRenderer({antialias:false, powerPreference:'high-performance'});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+document.body.appendChild(renderer.domElement);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),2.6,0.5,0.05);
+composer.addPass(bloom);
+
+// ═══════════════════════════════════
+// TEXTURES
+// ═══════════════════════════════════
+function mkTex(size,r,g,b) {
+  const cv=document.createElement('canvas'); cv.width=cv.height=size;
+  const ctx=cv.getContext('2d');
+  const gr=ctx.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+  gr.addColorStop(0,  `rgba(${r},${g},${b},1)`);
+  gr.addColorStop(.1, `rgba(${r},${g},${b},.95)`);
+  gr.addColorStop(.4, `rgba(${r},${g},${b},.3)`);
+  gr.addColorStop(.7, `rgba(${r},${g},${b},.07)`);
+  gr.addColorStop(1,  'rgba(0,0,0,0)');
+  ctx.fillStyle=gr; ctx.fillRect(0,0,size,size);
+  return new THREE.CanvasTexture(cv);
+}
+const tCore   = mkTex(64,...MY_TEX_CLR);
+const tRing   = mkTex(32,210,225,255);
+// Thread/stream màu theo role: A=vàng, B=hồng
+const THREAD_CLR = myRole==='A' ? [255,210,100]  : [255,150,195];
+const STREAM_CLR = myRole==='A' ? [255,245,180]  : [255,200,230];
+const THREAD_HEX = myRole==='A' ? 0xffcc55       : 0xff99cc;
+const STREAM_HEX = myRole==='A' ? 0xffeeaa       : 0xffccee;
+// Mini globe màu người kia: A thấy hồng, B thấy vàng
+const MINI_CLR   = myRole==='A' ? [255,160,200]  : [255,225,140];
+const MINI_HEX   = myRole==='A' ? 0xffaad0       : 0xffe08a;
+const tThread = mkTex(16,...THREAD_CLR);
+const tStream = mkTex(12,...STREAM_CLR);
+const tMini   = mkTex(32,...MINI_CLR);
+
+// ═══════════════════════════════════
+// MY GLOBE
+// ═══════════════════════════════════
+const gC  = new THREE.BufferGeometry();
+const pos = new Float32Array(CORE_N*3);
+const base= new Float32Array(CORE_N*3);
+const rnd = new Float32Array(CORE_N*4);
+
+for(let i=0;i<CORE_N;i++){
+  const phi  =Math.acos(-1+(2*i)/CORE_N);
+  const theta=Math.sqrt(CORE_N*Math.PI)*phi;
+  const r    =GLOBE_R+Math.random()*.6;
+  base[i*3]  =r*Math.sin(phi)*Math.cos(theta);
+  base[i*3+1]=r*Math.sin(phi)*Math.sin(theta);
+  base[i*3+2]=r*Math.cos(phi);
+  pos[i*3]  =(Math.random()-.5)*20;
+  pos[i*3+1]=(Math.random()-.5)*20;
+  pos[i*3+2]=(Math.random()-.5)*20;
+  rnd[i*4]  =Math.random()*.24+.07;
+  rnd[i*4+1]=Math.random()*Math.PI*2;
+  rnd[i*4+2]=Math.random()*Math.PI*2;
+  rnd[i*4+3]=Math.random();
+}
+gC.setAttribute('position',new THREE.BufferAttribute(pos,3));
+const pCore=new THREE.Points(gC,new THREE.PointsMaterial({
+  size:.13,map:tCore,transparent:true,
+  blending:THREE.AdditiveBlending,depthWrite:false,color:MY_COLOR
+}));
+scene.add(pCore);
+
+const gR  =new THREE.BufferGeometry();
+const posR=new Float32Array(RING_N*3);
+const baseR=new Float32Array(RING_N*3);
+const rndR=new Float32Array(RING_N*3);
+for(let i=0;i<RING_N;i++){
+  const a=Math.random()*Math.PI*2;
+  const u=Math.random();
+  const rad=6.5+u*u*5.0;
+  const px=Math.cos(a)*rad,pz=Math.sin(a)*rad;
+  const py=(Math.random()-.5)*.07;
+  baseR[i*3]  =px;
+  baseR[i*3+1]=py-pz*Math.sin(RING_TILT)*.14;
+  baseR[i*3+2]=pz*Math.cos(RING_TILT*.14);
+  posR[i*3]  =(Math.random()-.5)*22;
+  posR[i*3+1]=(Math.random()-.5)*10;
+  posR[i*3+2]=(Math.random()-.5)*22;
+  rndR[i*3]  =Math.random()*.16+.04;
+  rndR[i*3+1]=Math.random()*Math.PI*2;
+  rndR[i*3+2]=Math.random();
+}
+gR.setAttribute('position',new THREE.BufferAttribute(posR,3));
+const pRing=new THREE.Points(gR,new THREE.PointsMaterial({
+  size:.075,map:tRing,transparent:true,
+  blending:THREE.AdditiveBlending,depthWrite:false,color:MY_RING_CLR
+}));
+scene.add(pRing);
+
+// ═══════════════════════════════════
+// THREAD — từ cầu ra mép màn hình
+// ═══════════════════════════════════
+const gThread=new THREE.BufferGeometry();
+const threadP=new Float32Array(THREAD_N*3);
+const threadR=new Float32Array(THREAD_N*2);
+for(let i=0;i<THREAD_N;i++){
+  threadP[i*3]=i/THREAD_N*THREAD_LEN*THREAD_DIR;
+  threadP[i*3+1]=0; threadP[i*3+2]=0;
+  threadR[i*2]=Math.random()*Math.PI*2;
+  threadR[i*2+1]=Math.random();
+}
+gThread.setAttribute('position',new THREE.BufferAttribute(threadP,3));
+const pThread=new THREE.Points(gThread,new THREE.PointsMaterial({
+  size:.06,map:tThread,transparent:true,
+  blending:THREE.AdditiveBlending,depthWrite:false,
+  color:THREAD_HEX,opacity:0
+}));
+scene.add(pThread);
+
+// ═══════════════════════════════════
+// STREAM — hạt chạy dọc dây
+// ═══════════════════════════════════
+const gStream=new THREE.BufferGeometry();
+const streamP=new Float32Array(STREAM_N*3);
+const streamT=new Float32Array(STREAM_N);
+const streamS=new Float32Array(STREAM_N);
+for(let i=0;i<STREAM_N;i++){
+  streamT[i]=Math.random();
+  streamS[i]=.004+Math.random()*.004;
+}
+gStream.setAttribute('position',new THREE.BufferAttribute(streamP,3));
+const pStream=new THREE.Points(gStream,new THREE.PointsMaterial({
+  size:.09,map:tStream,transparent:true,
+  blending:THREE.AdditiveBlending,depthWrite:false,
+  color:STREAM_HEX,opacity:0
+}));
+scene.add(pStream);
+
+// ═══════════════════════════════════
+// MINI GLOBE — quả cầu nhỏ của người kia
+// quay bên trong cầu mình khi connected
+// ═══════════════════════════════════
+const MINI_N    = 1800;
+const MINI_R    = 1.4;  // bán kính mini globe
+const gMini     = new THREE.BufferGeometry();
+const miniPos   = new Float32Array(MINI_N*3);
+const miniBase  = new Float32Array(MINI_N*3);
+const miniRnd   = new Float32Array(MINI_N*3);
+for(let i=0;i<MINI_N;i++){
+  const phi  =Math.acos(-1+(2*i)/MINI_N);
+  const theta=Math.sqrt(MINI_N*Math.PI)*phi;
+  miniBase[i*3]  =MINI_R*Math.sin(phi)*Math.cos(theta);
+  miniBase[i*3+1]=MINI_R*Math.sin(phi)*Math.sin(theta);
+  miniBase[i*3+2]=MINI_R*Math.cos(phi);
+  miniPos[i*3]  =miniBase[i*3];
+  miniPos[i*3+1]=miniBase[i*3+1];
+  miniPos[i*3+2]=miniBase[i*3+2];
+  miniRnd[i*3]  =Math.random()*Math.PI*2;
+  miniRnd[i*3+1]=Math.random()*Math.PI*2;
+  miniRnd[i*3+2]=Math.random()*.015+.005;
+}
+gMini.setAttribute('position',new THREE.BufferAttribute(miniPos,3));
+const pMini=new THREE.Points(gMini,new THREE.PointsMaterial({
+  size:.10,map:tMini,transparent:true,
+  blending:THREE.AdditiveBlending,depthWrite:false,
+  color:MINI_HEX,opacity:0
+}));
+// Mini globe nằm trong scene chính (không qua bloom riêng)
+scene.add(pMini);
+
+// ═══════════════════════════════════
+// PHOTO CARDS
+// ═══════════════════════════════════
+const photoGroup=new THREE.Group();
+scenePhotos.add(photoGroup);
+const GOLDEN=Math.PI*(3-Math.sqrt(5));
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+function makeCard(photo,idx,total,offsetX){
+  const W=300,H=225,PAD=14,FOOT=68;
+  const cw=W+PAD*2,ch=H+PAD+FOOT;
+  const cv=document.createElement('canvas');
+  cv.width=cw;cv.height=ch;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='rgba(5,3,1,0.80)';
+  roundRect(ctx,0,0,cw,ch,12);ctx.fill();
+  ctx.strokeStyle='rgba(255,205,70,0.4)';ctx.lineWidth=1;
+  roundRect(ctx,0,0,cw,ch,12);ctx.stroke();
+  ctx.fillStyle='rgba(255,235,175,0.9)';
+  ctx.font='17px Georgia';ctx.textAlign='center';
+  ctx.fillText(photo.name||'',cw/2,H+PAD+30);
+  ctx.fillStyle='rgba(255,185,60,0.4)';
+  ctx.font='12px Georgia';
+  ctx.fillText(photo.date||'',cw/2,H+PAD+52);
+  const tex=new THREE.CanvasTexture(cv);
+  const mat=new THREE.SpriteMaterial({
+    map:tex,transparent:true,opacity:0,
+    blending:THREE.NormalBlending,depthWrite:false,
+    sizeAttenuation:true,depthTest:false
+  });
+  const sp=new THREE.Sprite(mat);
+  sp.scale.set(3.0*cw/H,3.0,1);
+  const ps=Math.acos(1-2*(idx+.5)/total);
+  const ts=GOLDEN*idx;
+  const rr=GLOBE_R+.5;
+  sp.position.set(
+    rr*Math.sin(ps)*Math.cos(ts)+offsetX,
+    rr*Math.sin(ps)*Math.sin(ts),
+    rr*Math.cos(ps)
+  );
+  sp.userData={phase:Math.random()*Math.PI*2,offsetX};
+  photoGroup.add(sp);
+  const img=new Image();img.crossOrigin='anonymous';
+  img.onload=()=>{
+    ctx.save();roundRect(ctx,PAD,PAD,W,H,7);ctx.clip();
+    ctx.drawImage(img,PAD,PAD,W,H);ctx.restore();
+    ctx.fillStyle='rgba(255,235,175,0.9)';
+    ctx.font='17px Georgia';ctx.textAlign='center';
+    ctx.fillText(photo.name||'',cw/2,H+PAD+30);
+    ctx.fillStyle='rgba(255,185,60,0.4)';
+    ctx.font='12px Georgia';
+    ctx.fillText(photo.date||'',cw/2,H+PAD+52);
+    tex.needsUpdate=true;
+  };
+  img.src=photo.url;
+  return sp;
+}
+
+// Build ảnh — ban đầu chỉ ảnh của mình, offsetX=0
+let mySprites    = MY_PHOTOS.map((p,i)=>makeCard(p,i,MY_PHOTOS.length,0));
+let otherSprites = []; // sẽ build khi connected
+
+let otherSpritesBuilt = false;
+function buildOtherSprites(globeOffsetX) {
+  // Xóa sprites cũ nếu có
+  otherSprites.forEach(sp=>photoGroup.remove(sp));
+  otherSprites=[];
+  // Ảnh của người kia đặt tại vị trí offset của mình (không cần vị trí cầu B vì cầu B không hiện)
+  otherSprites=OTHER_PHOTOS.map((p,i)=>makeCard(p,i,OTHER_PHOTOS.length,globeOffsetX));
+  otherSpritesBuilt=true;
+}
+
+// ═══════════════════════════════════
+// HAND TRACKING
+// ═══════════════════════════════════
+const videoEl=document.getElementById('input_video');
+let rotX=0,rotY=0,zoom=ZOOM_DEF,isHand=false,pinchDist=.15;
+
+const handsMP=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+handsMP.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.6});
+handsMP.onResults(res=>{
+  const txt=document.getElementById('hud-txt');
+  if(res.multiHandLandmarks?.length>0){
+    isHand=true;
+    const lm=res.multiHandLandmarks[0];
+    rotY=(lm[9].x-.5)*Math.PI*1.4;
+    rotX=(lm[9].y-.5)*Math.PI*.85;
+    pinchDist=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
+    zoom=THREE.MathUtils.clamp(
+      THREE.MathUtils.mapLinear(pinchDist,.05,.26,17,7.0),7.0,17
+    );
+    txt.textContent=zoom<ZOOM_REVEAL?'✦ Xoay tay để khám phá':'Nhíu ngón tay để zoom vào';
+    publish({isHand:true,rotX,rotY,zoom,pinchDist});
+  } else {
+    isHand=false;
+    rotX*=.96;rotY*=.96;
+    zoom=THREE.MathUtils.lerp(zoom,ZOOM_DEF,.03);
+    pinchDist=.15;
+    txt.textContent='Đưa tay vào khung hình';
+    publish({isHand:false,rotX:0,rotY:0,zoom:ZOOM_DEF,pinchDist:.15});
+  }
+});
+new Camera(videoEl,{
+  onFrame:async()=>await handsMP.send({image:videoEl}),
+  width:640,height:480
+}).start();
+window.addEventListener('wheel',e=>{
+  zoom=THREE.MathUtils.clamp(zoom+e.deltaY*.012,7.0,20);
+},{passive:true});
+
+// ═══════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════
+function osc(i,t,amp){
+  return Math.sin(t*1.1+i*.00831)*amp+Math.cos(t*.73+i*.01543)*amp*.45;
+}
+
+// Catenary từ điểm start đến end với độ võng
+function catPoint(f,x0,x1,sag){
+  const x=THREE.MathUtils.lerp(x0,x1,f);
+  const y=-Math.sin(f*Math.PI)*sag;
+  return {x,y,z:0};
+}
+
+// ═══════════════════════════════════
+// ANIMATION
+// ═══════════════════════════════════
+let globeOffsetX = 0; // vị trí X hiện tại của cầu mình (lerped)
+
+function animate(){
+  requestAnimationFrame(animate);
+  const t=Date.now()*.00040;
+  const connected=!!(other&&other.online);
+  const oHand=connected&&other.isHand;
+  const oRotX=oHand?(other.rotX||0):0;
+
+  // Khi connected, cầu mình dịch sang bên mình
+  const targetOffsetX=connected?MY_SIDE*GLOBE_OFFSET_CONNECTED:0;
+  globeOffsetX=THREE.MathUtils.lerp(globeOffsetX,targetOffsetX,.04);
+
+  // Build ảnh người kia lần đầu khi connected
+  if(connected&&!otherSpritesBuilt){
+    buildOtherSprites(globeOffsetX);
+  }
+  if(!connected&&otherSpritesBuilt){
+    // Ẩn ảnh người kia khi disconnect
+    otherSprites.forEach(sp=>{ sp.material.opacity=0; sp.material.needsUpdate=true; });
+    otherSpritesBuilt=false;
+  }
+
+  // ── Update core particles ──
+  const cp=gC.attributes.position.array;
+  for(let i=0;i<CORE_N;i++){
+    const s=rnd[i*4],o1=rnd[i*4+1],o2=rnd[i*4+2];
+    let tx,ty,tz;
+    if(isHand){
+      const b=osc(i,t,.065);
+      tx=base[i*3]+b+globeOffsetX;
+      ty=base[i*3+1]+b*.7;
+      tz=base[i*3+2]+b;
+    } else {
+      const r=9+Math.sin(t*s*.38+o2)*3;
+      tx=Math.sin(t*s+o1)*r+globeOffsetX;
+      ty=Math.cos(t*s*.58+o2)*r*.68;
+      tz=Math.sin(t*s*.82+o1+1.3)*r;
+    }
+    const ls=isHand?.020:.015;
+    cp[i*3]+=(tx-cp[i*3])*ls;
+    cp[i*3+1]+=(ty-cp[i*3+1])*ls;
+    cp[i*3+2]+=(tz-cp[i*3+2])*ls;
+  }
+  gC.attributes.position.needsUpdate=true;
+
+  // ── Rotation ──
+  const tRX=isHand?rotX:0;
+  const tRY=isHand?rotY:0;
+  pCore.rotation.x=THREE.MathUtils.lerp(pCore.rotation.x,tRX,.04);
+  pCore.rotation.y=THREE.MathUtils.lerp(pCore.rotation.y,tRY,.04);
+  pCore.rotation.y+=.00085;
+  pRing.rotation.x=THREE.MathUtils.lerp(pRing.rotation.x,tRX+RING_TILT,.04);
+  pRing.rotation.y=THREE.MathUtils.lerp(pRing.rotation.y,tRY,.04);
+  pRing.rotation.y+=.00055;
+  pRing.position.x=THREE.MathUtils.lerp(pRing.position.x,globeOffsetX,.05);
+
+  // ── Thread + Stream ──
+  if(connected){
+    // Thread: từ mép cầu mình ra mép màn hình
+    const threadStartX = globeOffsetX + THREAD_DIR*GLOBE_R;
+    const threadEndX   = globeOffsetX + THREAD_DIR*THREAD_LEN;
+    const sag = 1.2; // võng nhẹ
+
+    const tp=pThread.geometry.attributes.position.array;
+    for(let i=0;i<THREAD_N;i++){
+      const f=i/THREAD_N;
+      const ph=threadR[i*2];
+      const c=catPoint(f,threadStartX,threadEndX,sag);
+      const wave=Math.sin(t*3+ph+f*Math.PI*5)*.1;
+      tp[i*3]  =c.x;
+      tp[i*3+1]=c.y+wave;
+      tp[i*3+2]=Math.cos(t*2+ph)*.07;
+    }
+    pThread.geometry.attributes.position.needsUpdate=true;
+    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,.7,.05);
+
+    // Stream: chạy từ cầu ra mép
+    const sp2=pStream.geometry.attributes.position.array;
+    for(let i=0;i<STREAM_N;i++){
+      streamT[i]+=streamS[i];
+      if(streamT[i]>1)streamT[i]-=1;
+      const c=catPoint(streamT[i],threadStartX,threadEndX,sag);
+      sp2[i*3]  =c.x;
+      sp2[i*3+1]=c.y;
+      sp2[i*3+2]=c.z;
+    }
+    pStream.geometry.attributes.position.needsUpdate=true;
+    const streamOp=oHand&&isHand?.85:.4;
+    pStream.material.opacity=THREE.MathUtils.lerp(pStream.material.opacity,streamOp,.04);
+  } else {
+    pThread.material.opacity=THREE.MathUtils.lerp(pThread.material.opacity,0,.05);
+    pStream.material.opacity=THREE.MathUtils.lerp(pStream.material.opacity,0,.05);
+  }
+
+  // ── MINI GLOBE — quay bên trong cầu mình ──
+  if(connected){
+    const oRotX2=oHand?(other.rotX||0):0;
+    const oRotY2=oHand?(other.rotY||0):0;
+    // Mini globe xoay theo người kia + tự xoay nhẹ
+    pMini.rotation.x=THREE.MathUtils.lerp(pMini.rotation.x, oRotX2, .04);
+    pMini.rotation.y=THREE.MathUtils.lerp(pMini.rotation.y, oRotY2, .04);
+    pMini.rotation.y+=.0022; // nhanh hơn cầu chính một chút
+    // Vị trí: theo cầu mình
+    pMini.position.x=THREE.MathUtils.lerp(pMini.position.x, globeOffsetX, .05);
+    // Hạt thở nhẹ
+    const mpArr=gMini.attributes.position.array;
+    for(let i=0;i<MINI_N;i++){
+      const breath=Math.sin(t*1.8+miniRnd[i*3])*.04;
+      mpArr[i*3]  =miniBase[i*3]  *(1+breath);
+      mpArr[i*3+1]=miniBase[i*3+1]*(1+breath*.7);
+      mpArr[i*3+2]=miniBase[i*3+2]*(1+breath);
+    }
+    gMini.attributes.position.needsUpdate=true;
+    // Fade in mini globe
+    pMini.material.opacity=THREE.MathUtils.lerp(pMini.material.opacity,.75,.03);
+  } else {
+    pMini.material.opacity=THREE.MathUtils.lerp(pMini.material.opacity,0,.05);
+  }
+
+  // ── photoGroup xoay cùng cầu ──
+  photoGroup.rotation.x=pCore.rotation.x;
+  photoGroup.rotation.y=pCore.rotation.y;
+  photoGroup.position.x=THREE.MathUtils.lerp(photoGroup.position.x,globeOffsetX,.05);
+
+  // ── Camera ──
+  // Khi connected: dịch camera sang bên mình để thấy cầu + thread
+  const camTargetX = connected ? MY_SIDE*1.5 : 0;
+  camera.position.x=THREE.MathUtils.lerp(camera.position.x,camTargetX,.04);
+  camera.position.z=THREE.MathUtils.lerp(camera.position.z,zoom,.05);
+
+  // ── Sprites opacity ──
+  const zf=THREE.MathUtils.clamp(
+    THREE.MathUtils.mapLinear(zoom,ZOOM_REVEAL,ZOOM_SHOW,0,1),0,1
+  );
+  const baseOp=isHand?zf*zf*(3-2*zf)*.80:0;
+
+  // Ảnh của mình
+  mySprites.forEach(sp=>{
+    if(!sp)return;
+    const shimmer=baseOp>.05?Math.sin(t*.9+sp.userData.phase)*.05:0;
+    sp.material.opacity=THREE.MathUtils.lerp(
+      sp.material.opacity,
+      THREE.MathUtils.clamp(baseOp+shimmer,0,1),.04
+    );
+    sp.material.needsUpdate=true;
+    // Update vị trí X theo globe
+    const bp=sp.userData;
+    sp.position.x=sp.position.x; // sprite đã ở đúng vị trí relative, photoGroup.position handle offset
+  });
+
+  // Ảnh của người kia — chỉ hiện khi connected và zoom vào
+  if(connected&&otherSpritesBuilt){
+    otherSprites.forEach(sp=>{
+      if(!sp)return;
+      const shimmer=baseOp>.05?Math.sin(t*.85+sp.userData.phase)*.05:0;
+      sp.material.opacity=THREE.MathUtils.lerp(
+        sp.material.opacity,
+        THREE.MathUtils.clamp(baseOp+shimmer,0,1),.04
+      );
+      sp.material.needsUpdate=true;
+    });
+  }
+
+  // ── Bloom ──
+  bloom.strength=THREE.MathUtils.lerp(
+    bloom.strength,
+    THREE.MathUtils.mapLinear(THREE.MathUtils.clamp(zoom,ZOOM_SHOW,ZOOM_DEF),ZOOM_SHOW,ZOOM_DEF,.6,2.6),
+    .04
+  );
+
+  if(isHand){
+    const intro=document.getElementById('intro');
+    if(intro)intro.style.opacity='0';
+  }
+
+  composer.render();
+  renderer.autoClear=false;
+  renderer.render(scenePhotos,camera);
+  renderer.autoClear=true;
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  composer.setSize(innerWidth,innerHeight);
+  bloom.resolution.set(innerWidth,innerHeight);
+});
+
+publish({isHand:false,rotX:0,rotY:0,zoom:ZOOM_DEF,pinchDist:.15});
+</script>
+</body>
+</html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>✦ Ký ức của chúng mình ✦</title>
